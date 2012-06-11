@@ -169,8 +169,8 @@ class ooPost
 		$args   = array_merge($defaults, $args);
 		$result = self::fetchAll($args);
 
-		if ($result && $single)
-			return $result[0];
+		if ($result && $single && $result->posts)
+			return $result->posts[0];
 
 		return $result;
 
