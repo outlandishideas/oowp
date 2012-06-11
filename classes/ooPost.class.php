@@ -80,18 +80,29 @@ class ooPost
 
 #region Default getters
 
+	protected static $postTypes = array();
+
 	/**
 	 * @static
 	 * @return string - the post name of this class derived from the classname
 	 */
-	public static function postName()
+	public static function postType()
 	{
-		if (preg_match('/([A-Z].*)/m', get_called_class(), $regs)) {
-			$match = $regs[1];
-			return lcfirst(from_camel_case($match));
-		} else {
+		$class = get_called_class();
+		if (!array_key_exists($class, static::$postTypes)) {
+			$postType = null;
+			if (preg_match('/([A-Z].*)/m', $class, $regs)) {
+				$match = $regs[1];
+				$postType = lcfirst(from_camel_case($match));
+			}
+			static::$postTypes[$class] = $postType;
+		}
+
+		$postType = static::$postTypes[$class];
+		if (!$postType) {
 			die('Invalid post type');
 		}
+		return $postType;
 	}
 
 	/**
@@ -99,7 +110,7 @@ class ooPost
 	 * @return string - the human-friendly name of this class, derived from the post name
 	 */
 	public static function friendlyName() {
-		return ucwords(str_replace('_', ' ', static::postName()));
+		return ucwords(str_replace('_', ' ', static::postType()));
 	}
 
 	/**
@@ -138,20 +149,20 @@ class ooPost
 
 
 	/**
-	 * @param $targetPostName string e.g. post, event - the type of post you want to connect to
+	 * @param $targetPostType string e.g. post, event - the type of post you want to connect to
 	 * @param bool $single - just return the first?
 	 * @param array $args - augment or overwrite the default parameters for the WP_Query
 	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
 	 * @return array
 	 */
-	protected function getConnected($targetPostName, $single = false, $args = array(), $hierarchical = false)
+	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
 	{
 		if (!function_exists('p2p_register_connection_type'))
 			return;
-		$postName = $this::postName();
-		$names    = array($targetPostName, $postName);
-		sort($names);
-		$connection_name = implode('_', $names);
+		$postType = $this::postType();
+		$types    = array($targetPostType, $postType);
+		sort($types);
+		$connection_name = implode('_', $types);
 
 		#todo optimisation: check to see if this post type is hierarchical first
 		if ($hierarchical) {
@@ -163,7 +174,7 @@ class ooPost
 		$defaults = array(
 			'connected_type'  => $connection_name,
 			'connected_items' => $connected_items,
-			'post_type'       => $targetPostName,
+			'post_type'       => $targetPostType,
 		);
 
 		$args   = array_merge($defaults, $args);
@@ -385,8 +396,8 @@ class ooPost
 						$postTypeEnd = strpos($entry, '.php');
 						if ($postTypeStart > 0) {
 							// split everything after the '-' by valid separators: ',', '|', '+' or ' '
-							$postNames = preg_split('/[\s,|\+]+/', substr($entry, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
-							if (in_array($this->postName(), $postNames)) {
+							$postTypes = preg_split('/[\s,|\+]+/', substr($entry, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
+							if (in_array($this->postType(), $postTypes)) {
 								$specific[] = $path . DIRECTORY_SEPARATOR . $entry;
 								break;
 							}
@@ -412,7 +423,7 @@ class ooPost
 		// if it gets to here, show an error message
 		?>
 		<div class="oowp-error">
-			<span class="oowp-post-type"><?php echo $this->postName(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
+			<span class="oowp-post-type"><?php echo $this->postType(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
 			<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
 			<!-- <?php print_r($paths); ?> -->
 		</div>
@@ -472,15 +483,15 @@ class ooPost
 	 * @return object|the|WP_Error
 	 */
 	static function register() {
-		$postName = static::postName();
-		if ($postName == 'page' || $postName == 'post') {
+		$postType = static::postType();
+		if ($postType == 'page' || $postType == 'post') {
 			$var = null;
 		} else {
 			$defaults = array(
 				'labels'      => oowp_generate_labels(static::friendlyName(), static::friendlyNamePlural()),
 				'public'      => true,
 				'has_archive' => true,
-				'rewrite'     => array('slug'      => $postName,
+				'rewrite'     => array('slug'      => $postType,
 									   'with_front'=> false),
 				'show_ui'     => true,
 				'supports'    => array(
@@ -489,11 +500,11 @@ class ooPost
 				)
 			);
 			$args     = static::getRegistrationArgs($defaults);
-			$var      = register_post_type($postName, $args);
+			$var      = register_post_type($postType, $args);
 		}
 		$class = get_called_class();
-		add_filter("manage_edit-{$postName}_columns", array($class, 'addCustomAdminColumns'));
-		add_action("manage_{$postName}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
+		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns'));
+		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
 		return $var;
 	}
@@ -503,14 +514,14 @@ class ooPost
 	 * append the count(s) to the end of the 'right now' box on the dashboard
 	 */
 	static function addRightNowCount() {
-		$postName = static::postName();
+		$postType = static::postType();
 		$friendlyName = static::friendlyNamePlural();
 
-		$numPosts = wp_count_posts($postName);
+		$numPosts = wp_count_posts($postType);
 
-		oowp_print_right_now_count($numPosts->publish, $postName, $friendlyName);
+		oowp_print_right_now_count($numPosts->publish, $postType, $friendlyName);
 		if ($numPosts->pending > 0) {
-			oowp_print_right_now_count($numPosts->pending, $postName, $friendlyName . ' Pending', 'pending');
+			oowp_print_right_now_count($numPosts->pending, $postType, $friendlyName . ' Pending', 'pending');
 		}
 	}
 
@@ -549,29 +560,33 @@ class ooPost
 	 * @return null|ooPost
 	 */
 	static function getQueriedObject() {
-		global $wp_the_query;
-		$id = $wp_the_query->get_queried_object_id();
-		return $id ? ooPost::fetch($id) : null;
+		global $ooQueriedObject;
+		if (!isset($ooQueriedObject)) {
+			global $wp_the_query;
+			$id = $wp_the_query->get_queried_object_id();
+			$ooQueriedObject = $id ? ooPost::fetch($id) : null;
+		}
+		return $ooQueriedObject;
 	}
 
 	/**
 	 * @static Creates a p2p connection to another post type
-	 * @param $targetPostName - the post_type of the post type you want to connect to
+	 * @param $targetPostType - the post_type of the post type you want to connect to
 	 * @param array $parameters - these can overwrite the defaults. though if you change the name of the connection you'll need a custom getConnected aswell
 	 * @return mixed
 	 */
-	static function registerConnection($targetPostName, $parameters = array())
+	static function registerConnection($targetPostType, $parameters = array())
 	{
 		if (!function_exists('p2p_register_connection_type'))
 			return;
-		$postName = (string)self::postName();
-		$names    = array($targetPostName, $postName);
-		sort($names);
-		$connection_name = implode('_', $names);
+		$postType = (string)self::postType();
+		$types    = array($targetPostType, $postType);
+		sort($types);
+		$connection_name = implode('_', $types);
 		$defaults        = array(
 			'name'        => $connection_name,
-			'from'        => $names[0],
-			'to'          => $names[1],
+			'from'        => $types[0],
+			'to'          => $types[1],
 			'cardinality' => 'many-to-many',
 			'reciprocal'  => true
 		);
@@ -603,7 +618,7 @@ class ooPost
 	 */
 	public static function fetchAllQuery($args = array())
 	{
-		$defaults = array('post_type'      => static::postName(),
+		$defaults = array('post_type'      => static::postType(),
 						  'posts_per_page' => -1);
 		if (static::isHierarchical()) {
 			$defaults['orderby'] = 'menu_order';
@@ -636,7 +651,7 @@ class ooPost
 	}
 
 	static function isHierarchical() {
-		return is_post_type_hierarchical(static::postName());
+		return is_post_type_hierarchical(static::postType());
 	}
 
 #endregion
