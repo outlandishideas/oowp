@@ -374,7 +374,7 @@ class ooPost
 			if (file_exists($path)) {
 				$fh = opendir($path);
 				while (false !== ($entry = readdir($fh))) {
-
+					$paths[] = $path . DIRECTORY_SEPARATOR . $entry;
 					if (strpos($entry, $partialType) === 0) {
 						// if there is a file that contains the post name too, make that a priority for selection
 						$postTypeStart = strpos($entry, '-');
@@ -384,11 +384,11 @@ class ooPost
 							$postNames = preg_split('/[\s,|\+]+/', substr($entry, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
 							if (in_array($this->postName(), $postNames)) {
 								$specific[] = $path . DIRECTORY_SEPARATOR . $entry;
+								break;
 							}
 						} else {
 							$nonspecific[] = $path . DIRECTORY_SEPARATOR . $entry;
 						}
-//						break;
 					}
 				}
 				closedir($fh);
@@ -409,6 +409,7 @@ class ooPost
 		<div class="oowp-error">
 			<span class="oowp-post-type"><?php echo $this->postName(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
 			<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
+			<!-- <?php print_r($paths); ?> -->
 		</div>
 		<?php
 //		throw new Exception(sprintf("Partial $partialType not found", $paths, get_class($this)));
