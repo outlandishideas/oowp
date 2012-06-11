@@ -1,0 +1,8 @@
+.oowp-error {
+	background: #fcc;
+	border: 1px dashed #c33;
+	margin: 2px;
+	padding: 2px;
+	float: left;
+	clear: both;
+}
