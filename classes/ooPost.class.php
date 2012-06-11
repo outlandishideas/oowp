@@ -329,6 +329,10 @@ class ooPost
 		return implode(', ', $links);
 	}
 
+	public function printMenuItem() {
+		$this->printPartial('menuitem');
+	}
+
 	public function printSidebar()
 	{
 		$this->printPartial('sidebar');
@@ -394,6 +398,7 @@ class ooPost
 				closedir($fh);
 			}
 		}
+
 		// pick the first specific, or the first non-specific to display
 		$match = ($specific ? $specific[0] : ($nonspecific ? $nonspecific[0] : null));
 		if ($match) {
@@ -433,6 +438,18 @@ class ooPost
 	function htmlAuthorLink()
 	{
 		return $this->callGlobalPost('get_the_author_link');
+	}
+
+	/**
+	 * @return bool true if this is an ancestor of the page currently being viewed
+	 */
+	public function isCurrentPageAncestor() {
+		$x = ooPost::getQueriedObject();
+		while ($x) {
+			if ($x->ID == $this->ID) return true;
+			$x = $x->getParent();
+		}
+		return false;
 	}
 
 #endregion
@@ -521,6 +538,16 @@ class ooPost
 	 * @param $post ooPost The post (subclass) object
 	 */
 	static function printCustomAdminColumn($column, $post) {
+	}
+
+	/**
+	 * @static
+	 * Gets the queried object (i.e. the post/page currently being viewed)
+	 * @return null|ooPost
+	 */
+	static function getQueriedObject() {
+		$id = get_queried_object_id();
+		return $id ? ooPost::fetch($id) : null;
 	}
 
 	/**
