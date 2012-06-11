@@ -63,7 +63,7 @@ function oowp_registerClasses($dir)
 		if (is_dir($dir . '/' . $file) && !in_array($file, array('.', '..'))) {
 			oowp_registerClasses($dir . '/' . $file);
 		} else if (preg_match("/\w+\.class\.php/", $file, $matches)) {
-			fp('requiring ' . $file);
+			oofp('requiring ' . $file);
 			require_once($dir . '/' . $file);
 			$className = str_replace('.class.php', '', $file);
 			global $_registered_ooClasses;
@@ -99,7 +99,7 @@ function ooGetClassName($data, $default = 'ooPost')
 	return $default;
 }
 
-function fp($data, $title = null)
+function oofp($data, $title = null)
 {
 	if (class_exists('FirePHP')) {
 		FirePHP::getInstance(true)->log($data, $title);

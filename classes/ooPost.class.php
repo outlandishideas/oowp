@@ -1,5 +1,5 @@
 <?php
-
+require_once('ooQuery.class.php');
 
 /**
  * This class is a placeholder for all functions which are shared across all post types, and across all sites.
@@ -56,15 +56,17 @@ class ooPost
 	public function __call($name, $args)
 	{
 		if (function_exists($name)) {
-			fp('Using default wordpress function ' . $name . ' and global $post');
+			oofp('Using default wordpress function ' . $name . ' and global $post');
 			global $post;
+			$post = $this;
 			setup_postdata($this);
 			return call_user_func_array($name, $args);
 			wp_reset_postdata();
 		} elseif (function_exists("wp_" . $name)) {
 			$name = "wp_" . $name;
-			fp('Using default wordpress function wp_' . $name . ' and global $post');
+			oofp('Using default wordpress function wp_' . $name . ' and global $post');
 			global $post;
+			$post = $this;
 			setup_postdata($this);
 			return call_user_func_array($name, $args);
 			wp_reset_postdata();
@@ -142,7 +144,7 @@ class ooPost
 	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
 	 * @return array
 	 */
-	public function getConnected($targetPostName, $single = false, $args = array(), $hierarchical = false)
+	protected function getConnected($targetPostName, $single = false, $args = array(), $hierarchical = false)
 	{
 		if (!function_exists('p2p_register_connection_type'))
 			return;
@@ -247,7 +249,7 @@ class ooPost
 	}
 
 	public function getParent() {
-		return (is_post_type_hierarchical($this->postName()) && $this->parent_id ? ooPost::fetch($this->parent_id) : null);
+		return (is_post_type_hierarchical($this->postName()) && isset($this->parent_id) ? ooPost::fetch($this->parent_id) : null);
 	}
 
 	/**
@@ -269,6 +271,7 @@ class ooPost
 	public function excerpt()
 	{
 		global $post;
+		$post = $this;
 		setup_postdata($this);
 		return apply_filters('the_excerpt', get_the_excerpt());
 	}
@@ -288,6 +291,7 @@ class ooPost
 		$args     = func_get_args();
 		$callback = array_shift($args);
 		global $post;
+		$post = $this;
 		setup_postdata($this);
 		$returnVal = call_user_func_array($callback, $args);
 		wp_reset_postdata();
@@ -370,7 +374,7 @@ class ooPost
 			if (file_exists($path)) {
 				$fh = opendir($path);
 				while (false !== ($entry = readdir($fh))) {
-					$paths[] = $path . DIRECTORY_SEPARATOR . $entry;
+
 					if (strpos($entry, $partialType) === 0) {
 						// if there is a file that contains the post name too, make that a priority for selection
 						$postTypeStart = strpos($entry, '-');
@@ -380,17 +384,16 @@ class ooPost
 							$postNames = preg_split('/[\s,|\+]+/', substr($entry, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
 							if (in_array($this->postName(), $postNames)) {
 								$specific[] = $path . DIRECTORY_SEPARATOR . $entry;
-								break;
 							}
 						} else {
 							$nonspecific[] = $path . DIRECTORY_SEPARATOR . $entry;
 						}
+//						break;
 					}
 				}
 				closedir($fh);
 			}
 		}
-
 		// pick the first specific, or the first non-specific to display
 		$match = ($specific ? $specific[0] : ($nonspecific ? $nonspecific[0] : null));
 		if ($match) {
@@ -406,7 +409,6 @@ class ooPost
 		<div class="oowp-error">
 			<span class="oowp-post-type"><?php echo $this->postName(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
 			<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
-			<!-- <?php print_r($paths); ?> -->
 		</div>
 		<?php
 //		throw new Exception(sprintf("Partial $partialType not found", $paths, get_class($this)));
@@ -593,10 +595,12 @@ class ooPost
 	static function fetchAll($args = array())
 	{
 		$query = static::fetchAllQuery($args);
-		return $query->posts;
+		$iterable = new ooWP_Query($query);
+		return $iterable;
 	}
 
 #endregion
+
 
 }
 
