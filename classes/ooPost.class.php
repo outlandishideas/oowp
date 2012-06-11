@@ -384,11 +384,11 @@ class ooPost
 							$postNames = preg_split('/[\s,|\+]+/', substr($entry, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
 							if (in_array($this->postName(), $postNames)) {
 								$specific[] = $path . DIRECTORY_SEPARATOR . $entry;
+								break;
 							}
 						} else {
 							$nonspecific[] = $path . DIRECTORY_SEPARATOR . $entry;
 						}
-//						break;
 					}
 				}
 				closedir($fh);
