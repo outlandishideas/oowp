@@ -249,7 +249,7 @@ class ooPost
 	}
 
 	public function getParent() {
-		return (is_post_type_hierarchical($this->postName()) && isset($this->parent_id) ? ooPost::fetch($this->parent_id) : null);
+		return ($this->isHierarchical() && !empty($this->parent_id) ? ooPost::fetch($this->parent_id) : null);
 	}
 
 	/**
@@ -473,21 +473,24 @@ class ooPost
 	 */
 	static function register() {
 		$postName = static::postName();
-		if ($postName == 'page' || $postName == 'post') return;
-		$defaults = array(
-			'labels'      => oowp_generate_labels(static::friendlyName(), static::friendlyNamePlural()),
-			'public'      => true,
-			'has_archive' => true,
-			'rewrite'     => array('slug'      => $postName,
-								   'with_front'=> false),
-			'show_ui'     => true,
-			'supports'    => array(
-				'title',
-				'editor',
-			)
-		);
-		$args     = static::getRegistrationArgs($defaults);
-		$var      = register_post_type($postName, $args);
+		if ($postName == 'page' || $postName == 'post') {
+			$var = null;
+		} else {
+			$defaults = array(
+				'labels'      => oowp_generate_labels(static::friendlyName(), static::friendlyNamePlural()),
+				'public'      => true,
+				'has_archive' => true,
+				'rewrite'     => array('slug'      => $postName,
+									   'with_front'=> false),
+				'show_ui'     => true,
+				'supports'    => array(
+					'title',
+					'editor',
+				)
+			);
+			$args     = static::getRegistrationArgs($defaults);
+			$var      = register_post_type($postName, $args);
+		}
 		$class = get_called_class();
 		add_filter("manage_edit-{$postName}_columns", array($class, 'addCustomAdminColumns'));
 		add_action("manage_{$postName}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
@@ -546,7 +549,8 @@ class ooPost
 	 * @return null|ooPost
 	 */
 	static function getQueriedObject() {
-		$id = get_queried_object_id();
+		global $wp_the_query;
+		$id = $wp_the_query->get_queried_object_id();
 		return $id ? ooPost::fetch($id) : null;
 	}
 
@@ -601,6 +605,10 @@ class ooPost
 	{
 		$defaults = array('post_type'      => static::postName(),
 						  'posts_per_page' => -1);
+		if (static::isHierarchical()) {
+			$defaults['orderby'] = 'menu_order';
+			$defaults['order'] = 'asc';
+		}
 		$args     = wp_parse_args($args, $defaults);
 		$query    = new WP_Query($args);
 
@@ -625,6 +633,10 @@ class ooPost
 		$query = static::fetchAllQuery($args);
 		$iterable = new ooWP_Query($query);
 		return $iterable;
+	}
+
+	static function isHierarchical() {
+		return is_post_type_hierarchical(static::postName());
 	}
 
 #endregion
