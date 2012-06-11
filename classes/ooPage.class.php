@@ -14,6 +14,7 @@ class ooPage extends ooPost
 
 	public function children()
 	{
+		$var = 2;
 		return static::fetchAll(array('post_parent' => $this->ID, 'orderby' => 'menu_order', 'order' => 'desc'));
 	}
 
