@@ -8,6 +8,8 @@ require_once('ooQuery.class.php');
 class ooPost
 {
 
+	protected $_cache = array();
+
 #region Getters, Setters, Construct, Init
 
 	/**
@@ -74,6 +76,52 @@ class ooPost
 			trigger_error('Attempt to call non existenty method ' . $name . ' on class ' . get_class($this));
 			//throw new Exception(sprintf('The required method "%s" does not exist for %s', $name, get_class($this)));
 		}
+	}
+
+	/**
+	 * Returns the name of the function that called whatever called the caller :)
+	 * e.g. if theFunction() called theOtherFunction(), theOtherFunction() could call getCaller(), which
+	 * would return 'theFunction'
+	 * @param null $function Don't supply this
+	 * @param int $diff Don't supply this
+	 * @return string
+	 */
+	protected function getCaller($function = null, $diff = 1) {
+		if (!$function) {
+			return $this->getCaller(__FUNCTION__, $diff+2);
+		}
+
+		$stack = debug_backtrace();
+		$stackSize = count($stack);
+
+		$caller = '';
+		for ($i = 0; $i < $stackSize; $i++) {
+			if ($stack[$i]['function'] == $function && ($i + $diff) < $stackSize) {
+				$caller = $stack[$i + $diff]['function'];
+				break;
+			}
+		}
+
+		return $caller;
+	}
+
+	/**
+	 * Gets the cached value for the function that called this
+	 * @return mixed
+	 */
+	protected function getCacheValue() {
+		$functionName = $this->getCaller();
+		return (array_key_exists($functionName, $this->_cache) ? $this->_cache[$functionName] : null);
+	}
+
+	/**
+	 * Sets and returns the cached value for the function that called this
+	 * @param $value
+	 * @return mixed
+	 */
+	protected function setCacheValue($value) {
+		$this->_cache[$this->getCaller()] = $value;
+		return $value;
 	}
 
 #endregion
@@ -260,7 +308,9 @@ class ooPost
 	}
 
 	public function getParent() {
-		return ($this->isHierarchical() && !empty($this->parent_id) ? ooPost::fetch($this->parent_id) : null);
+		return $this->getCacheValue() ?: $this->setCacheValue(
+			$this->isHierarchical() && !empty($this->parent_id) ? ooPost::fetch($this->parent_id) : null
+		);
 	}
 
 	/**
@@ -417,18 +467,17 @@ class ooPost
 			if (WP_DEBUG) print "\n\n<!--start $match start-->\n";
 			include($match);
 			if (WP_DEBUG) print "\n<!--end $match end-->\n\n";
-			return;
+		} else {
+			// show an error message
+			?>
+			<div class="oowp-error">
+				<span class="oowp-post-type"><?php echo $this->postType(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
+				<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
+				<!-- <?php print_r($paths); ?> -->
+			</div>
+			<?php
+//  		throw new Exception(sprintf("Partial $partialType not found", $paths, get_class($this)));
 		}
-
-		// if it gets to here, show an error message
-		?>
-		<div class="oowp-error">
-			<span class="oowp-post-type"><?php echo $this->postType(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
-			<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
-			<!-- <?php print_r($paths); ?> -->
-		</div>
-		<?php
-//		throw new Exception(sprintf("Partial $partialType not found", $paths, get_class($this)));
 	}
 
 	/***
