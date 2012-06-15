@@ -512,6 +512,56 @@ class ooPost
 		return false;
 	}
 
+	public function featuredImageUrl($image_size = 'mugshot'){
+
+		$image = wp_get_attachment_image_src( get_field('image', $this->ID) , 'mugshot' );
+		return $image[0];
+	}
+
+	public function featuredImage($size = 'thumbnail', $attrs = array()){
+		$imgSrc =  $this->featuredImageUrl();
+		if($imgSrc){
+			return wp_get_attachment_image(get_field('image', $this->ID), $size, 0, $attrs);
+		}
+	}
+
+	function breadcrumbs(){
+		$delimiter = '&raquo;';
+		$ancestors = array($this->title());
+		$current = $this;
+		while($parent = $current->getParent()){
+			$ancestors[] = $parent->htmlLink();
+			$current = $parent;
+		}
+		if($this->ID != HOME_PAGE_ID){
+			$ancestors[] = ooPost::fetch(HOME_PAGE_ID)->htmlLink();
+		}
+		array_reverse($ancestors);
+		print implode(" $delimiter ", array_reverse($ancestors));
+	}
+
+	public function attachments(){
+		$args = array( 'post_type' => 'attachment', 'numberposts' => -1, 'post_status' => 'inherit', 'post_parent' => $this->ID );
+		return self::fetchAll($args);
+
+	}
+
+	protected function listToString($posts, $without_links = false){
+		$links = array();
+		foreach ( $posts as $item ) {
+			$links[] = $without_links ? $item->title() : "<a href='". $item->permalink() ."'>".$item->title()."</a>";
+		}
+
+		if(count($links) > 1){
+			$a1 = array_pop($links);
+			$a2 = array_pop($links);
+			$links[] = "$a1 & $a2";
+			return implode(', ', $links);
+		}elseif($links){
+			return $links[0];
+		}
+	}
+
 #endregion
 
 #region Static functions
