@@ -5,7 +5,7 @@ Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
 Description: A brief description of the Plugin.
 Version: 0.2
 */
-
+//
 add_action('the_posts', 'create_oo_posts', 100, 2);
 function create_oo_posts($has_posts, $query)
 {
