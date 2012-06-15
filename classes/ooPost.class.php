@@ -533,7 +533,7 @@ class ooPost
 	 */
 	static function register() {
 		$postType = static::postType();
-		if ($postType == 'page' || $postType == 'post') {
+		if ($postType == 'page' || $postType == 'post' || $postType == 'attachment' ) {
 			$var = null;
 		} else {
 			$defaults = array(
