@@ -544,7 +544,7 @@ class ooPost
 
 
 
-	public function featuredImageUrl($image_size = 'mugshot'){
+	public function featuredImageUrl($image_size = 'thumbnail'){
 
 		$image = wp_get_attachment_image_src( get_field('image', $this->ID) , 'mugshot' );
 		return $image[0];
