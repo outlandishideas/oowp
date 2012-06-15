@@ -313,6 +313,10 @@ class ooPost
 		);
 	}
 
+	public static function getPostTypeParentId(){
+		return 0;
+	}
+
 	/**
 	 * Traverses up the getParent() hierarchy until finding one with no parent, which is returned
 	 */
@@ -393,6 +397,14 @@ class ooPost
 	public function printMenuItem() {
 		$this->printPartial('menuitem');
 	}
+
+	public static function printMenuItems(){
+		$posts = static::fetchAll(array('post_parent' => static::getPostTypeParentId()));
+		foreach($posts as $post){
+			$post->printMenuItem();
+		}
+	}
+
 
 	public function printSidebar()
 	{
@@ -503,6 +515,24 @@ class ooPost
 	/**
 	 * @return bool true if this is an ancestor of the page currently being viewed
 	 */
+	public function isCurrentPage() {
+		$x = ooPost::getQueriedObject();
+		if ($x->ID == $this->ID) return true;
+
+		return false;
+	}
+	/**
+	 * @return bool true if this is an ancestor of the page currently being viewed
+	 */
+	public function isCurrentPageParent() {
+		$x = ooPost::getQueriedObject();
+		if ($x->ID == $this->post_parent) return true;
+
+		return false;
+	}
+	/**
+	 * @return bool true if this is an ancestor of the page currently being viewed
+	 */
 	public function isCurrentPageAncestor() {
 		$x = ooPost::getQueriedObject();
 		while ($x) {
@@ -511,6 +541,8 @@ class ooPost
 		}
 		return false;
 	}
+
+
 
 	public function featuredImageUrl($image_size = 'mugshot'){
 
