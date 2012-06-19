@@ -646,14 +646,15 @@ class ooPost
 	 */
 	static function addRightNowCount() {
 		$postType = static::postType();
-		if ($postType != 'post') {
-			$friendlyName = static::friendlyNamePlural();
+		if ($postType != 'post' && $postType != 'page') {
+			$singular = static::friendlyName();
+			$plural = static::friendlyNamePlural();
 
 			$numPosts = wp_count_posts($postType);
 
-			oowp_print_right_now_count($numPosts->publish, $postType, $friendlyName);
+			oowp_print_right_now_count($numPosts->publish, $postType, $singular, $plural);
 			if ($numPosts->pending > 0) {
-				oowp_print_right_now_count($numPosts->pending, $postType, $friendlyName . ' Pending', 'pending');
+				oowp_print_right_now_count($numPosts->pending, $postType, $singular . ' Pending', $plural . ' Pending', 'pending');
 			}
 		}
 	}
