@@ -309,11 +309,16 @@ class ooPost
 
 	public function getParent() {
 		return $this->getCacheValue() ?: $this->setCacheValue(
-			$this->isHierarchical() && !empty($this->parent_id) ? ooPost::fetch($this->parent_id) : null
+			$this->isHierarchical() && !empty($this->post_parent) ? ooPost::fetch($this->post_parent) : null
 		);
 	}
 
-	public static function getPostTypeParentId(){
+	/**
+	 * @static
+	 * @return int returns the root parent type for posts.
+	 * If parent of a hierchical post type is a page, for example, this needs to be set to that ID
+	 */
+	public static function postTypeParentId(){
 		return 0;
 	}
 
@@ -348,7 +353,17 @@ class ooPost
 
 	public function children()
 	{
-		return static::fetchAll(array('post_parent' => $this->ID));
+		global $_registered_ooClasses;
+		$posts = array();
+		foreach($_registered_ooClasses as $class){
+			$tmp = $class::postTypeParentId();
+			if($class::postTypeParentId() == $this->ID){
+				$posts = array_merge($posts, $class::fetchRoots()->posts);
+			}
+		}
+		$children = static::fetchAll(array('post_parent' => $this->ID));
+		$children->posts = array_merge($children->posts, $posts);
+		return $children;
 	}
 
 	protected function callGlobalPost()
@@ -398,8 +413,8 @@ class ooPost
 		$this->printPartial('menuitem');
 	}
 
-	public static function printMenuItems(){
-		$posts = static::fetchAll(array('post_parent' => static::getPostTypeParentId()));
+	public static function printMenuItems($args = array()){
+		$posts = static::fetchRoots($args);
 		foreach($posts as $post){
 			$post->printMenuItem();
 		}
@@ -526,7 +541,7 @@ class ooPost
 	 */
 	public function isCurrentPageParent() {
 		$x = ooPost::getQueriedObject();
-		if ($x->ID == $this->post_parent) return true;
+		if ($x->post_parent == $this->ID) return true;
 
 		return false;
 	}
@@ -782,6 +797,19 @@ class ooPost
 		$iterable = new ooWP_Query($query);
 		return $iterable;
 	}
+
+	/**
+	 * @static Returns just the ooPosts from fetchAllQuery as an array
+	 * @param array $args
+	 * @return array
+	 */
+	static function fetchRoots($args = array())
+	{
+		$args['post_parent'] = self::postTypeParentId();
+		return static::fetchAll($args);
+	}
+
+
 
 	static function isHierarchical() {
 		return is_post_type_hierarchical(static::postType());
