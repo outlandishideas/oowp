@@ -264,9 +264,9 @@ function oowp_generate_labels($singular, $plural = null) {
 	);
 }
 
-function oowp_print_right_now_count($count, $postName, $friendlyName, $status = null) {
+function oowp_print_right_now_count($count, $postName, $singular, $plural, $status = null) {
 	$num = number_format_i18n($count);
-	$text = _n($count, $friendlyName, intval($count) );
+	$text = _n($singular, $plural, intval($count) );
 
 	if ( current_user_can( 'edit_posts' ) ) {
 		$link = 'edit.php?post_type=' . $postName;
