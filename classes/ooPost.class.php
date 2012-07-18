@@ -797,7 +797,8 @@ class ooPost
 	 */
 	static function fetchRoots($args = array())
 	{
-		$args['post_parent'] = self::postTypeParentId();
+		if(!isset($args['post_parent']))
+			$args['post_parent'] = self::postTypeParentId();
 		return static::fetchAll($args);
 	}
 
