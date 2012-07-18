@@ -5,11 +5,14 @@
 	<a href="<?php echo $post->permalink(); ?>">
 		<span><?php echo $post->title(); ?></span>
 	</a>
-	<?php if ($post->children()->posts): ?>
+	<?php
+
+    $args['current_depth']++;
+    if ($post->children()->posts && ( ($args['current_depth'] < $args['max_depth']) || (!$args['max_depth']) )): ?>
 		<ul class='children'>
 			<?php
 			foreach($post->children() as $child){
-				$child->printMenuItem();
+				$child->printMenuItem($args);
 			}
 			?>
 		</ul>

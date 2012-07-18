@@ -409,14 +409,16 @@ class ooPost
 		return implode(', ', $links);
 	}
 
-	public function printMenuItem() {
-		$this->printPartial('menuitem');
+	public function printMenuItem($args = array()) {
+        $args['max_depth'] = isset($args['max_depth'])? $args['max_depth'] : 0;
+        $args['current_depth'] = isset($args['current_depth'])? $args['current_depth'] : 0;
+		$this->printPartial('menuitem', $args);
 	}
 
 	public static function printMenuItems($args = array()){
 		$posts = static::fetchRoots($args);
 		foreach($posts as $post){
-			$post->printMenuItem();
+			$post->printMenuItem($args);
 		}
 	}
 
@@ -454,7 +456,7 @@ class ooPost
 	 * looks for partial-$partialType-$post_type.php the partial-$partialType.php
 	 * @param $partialType  - e.g. main,  item, promo, etc
 	 */
-	protected function printPartial($partialType)
+	protected function printPartial($partialType, $args = array())
 	{
 		// look in the stylesheet directory, then plugin directory
 		$places = array(get_stylesheet_directory() . '/partials', dirname(__FILE__) . "/../partials");
