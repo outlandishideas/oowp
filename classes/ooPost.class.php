@@ -44,10 +44,16 @@ class ooPost
 	 * @static
 	 * Should be run with the wordpress init hook
 	 */
-	public static function init()
+	public final static function init()
 	{
 		static::register();
 	}
+
+	/**
+	 * @static
+	 * Called after all oowp classes have been registered
+	 */
+	public static function postRegistration() { /* do nothing by default */ }
 
 	/**
 	 * @param $name
@@ -356,9 +362,9 @@ class ooPost
 	 */
 	public function children()
 	{
-		global $_registered_ooClasses;
+		global $_registered_postClasses;
 		$posts = array();
-		foreach($_registered_ooClasses as $class){
+		foreach($_registered_postClasses as $class){
 			if($class::postTypeParentId() == $this->ID){
 				$posts = array_merge($posts, $class::fetchRoots()->posts);
 			}
@@ -625,7 +631,7 @@ class ooPost
 	 *
 	 * @return object|the|WP_Error
 	 */
-	static function register() {
+	public static final function register() {
 		$postType = static::postType();
 		if ($postType == 'page' || $postType == 'post' || $postType == 'attachment' ) {
 			$var = null;
@@ -649,6 +655,8 @@ class ooPost
 		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns'));
 		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
+		global $_registered_postClasses;
+		$_registered_postClasses[] = $class;
 		return $var;
 	}
 
@@ -741,7 +749,7 @@ class ooPost
 	}
 
 	/**
-	 * @static factory class fetches a post of the appropriate subclass
+	 * @static factory class creates a post of the appropriate ooPost subclass, populated with the given data
 	 * @param null $data
 	 * @return ooPost - an ooPost object or subclass if it exists
 	 */
@@ -754,7 +762,7 @@ class ooPost
 
 			return new $className($data);
 		}
-
+		return null;
 	}
 
 	/**
@@ -797,7 +805,7 @@ class ooPost
 	}
 
 	/**
-	 * @static Returns just the ooPosts from fetchAllQuery as an array
+	 * @static Returns the roots of this post type (i.e those whose post_parent is self::postTypeParentId)
 	 * @param array $args
 	 * @return array
 	 */

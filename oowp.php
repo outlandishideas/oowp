@@ -17,28 +17,25 @@ function create_oo_posts($has_posts, $query)
 	return $query->posts;
 }
 
-$_registered_ooClasses = array();
-// include all matching classes in ./classes and theme/inc/classes directories,
+$_registered_postClasses = array();
+// include all matching classes in ./classes and [current theme]/classes directories,
 // and register any subclasses of ooPost using their static register() function
 add_action('init', '_oowp_init');
 function _oowp_init()
 {
 	$dirs = array(
-		dirname(__FILE__) . '/classes',
+		dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes',
 //		dirname(__FILE__) . '/../../themes',
-		get_stylesheet_directory() . '/classes/'
+		get_stylesheet_directory() . DIRECTORY_SEPARATOR . 'classes'
 	);
 	foreach ($dirs as $dir) {
-		if (is_dir($dir)) {
-			oowp_registerClasses($dir);
-		}
+		oowp_initialiseClasses($dir);
 	}
-	global $_registered_ooClasses;
-	// call the init functions where they exist (must be after registering post types above
-	foreach ($_registered_ooClasses as $className) {
-		if (method_exists($className, 'init')) {
-			$className::init();
-		}
+
+	// call postRegistration on all registered classes, for e.g. creating p2p connections
+	global $_registered_postClasses;
+	foreach ($_registered_postClasses as $class) {
+		$class::postRegistration();
 	}
 
 	unregister_post_type('post');
@@ -56,28 +53,30 @@ function oowp_customise_admin_menu() {
 	remove_menu_page('link-manager.php');
 }
 
-function oowp_registerClasses($dir)
+/**
+ * Requires all files found in the given directory, and calls init() on any valid classes
+ * @param $dir
+ */
+function oowp_initialiseClasses($dir)
 {
+	if (!is_dir($dir)) {
+		return;
+	}
+
 	$handle = opendir($dir);
 	while ($file = readdir($handle)) {
-		if (is_dir($dir . '/' . $file) && !in_array($file, array('.', '..'))) {
-			oowp_registerClasses($dir . '/' . $file);
-		} else if (preg_match("/\w+\.class\.php/", $file, $matches)) {
+		$fullFile = $dir . DIRECTORY_SEPARATOR . $file;
+		if (is_dir($fullFile) && !in_array($file, array('.', '..'))) {
+			oowp_initialiseClasses($fullFile);
+		} else if (preg_match("/(\w+)\.class\.php/", $file, $matches)) {
 			oofp('requiring ' . $file);
-			require_once($dir . '/' . $file);
-			$className = str_replace('.class.php', '', $file);
-			global $_registered_ooClasses;
-//			if (class_exists($className) && (is_subclass_of($className, 'ooPost') || is_subclass_of($className, 'ooTerm') || is_subclass_of($className, 'ooTheme') || is_subclass_of($className, 'ooTaxonomy'))) {
-			if (class_exists($className)) {
-				$_registered_ooClasses[] = $className;
-				if (method_exists($className, 'init')) {
-					$className::register();
-				}
+			require_once($fullFile);
+			$className = $matches[1];
+			if (class_exists($className) && method_exists($className, 'init')) {
+				$className::init();
 			}
 		}
 	}
-
-
 }
 
 
@@ -86,8 +85,8 @@ function oowp_registerClasses($dir)
  */
 function ooGetClassName($data, $default = 'ooPost')
 {
-	global $_registered_ooClasses;
-	$reversedClasses = array_reverse($_registered_ooClasses);
+	global $_registered_postClasses;
+	$reversedClasses = array_reverse($_registered_postClasses);
 	$classStem       = to_camel_case($data, true);
 	foreach ($reversedClasses as $registeredClass) {
 		preg_match('/([A-Z].*)/m', $registeredClass, $matches);
