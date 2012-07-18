@@ -416,7 +416,13 @@ class ooPost
 	}
 
 	public static function printMenuItems($args = array()){
-		$posts = static::fetchRoots($args);
+		if(!isset($args['post_parent'])){
+			$posts = static::fetchRoots($args);
+		}else{
+			$args['depth'] = 1;
+			$posts = static::fetchAll($args);
+		}
+
 		foreach($posts as $post){
 			$post->printMenuItem($args);
 		}
@@ -808,8 +814,7 @@ class ooPost
 	 */
 	static function fetchRoots($args = array())
 	{
-		if(!isset($args['post_parent']))
-			$args['post_parent'] = self::postTypeParentId();
+		$args['post_parent'] = self::postTypeParentId();
 		return static::fetchAll($args);
 	}
 
