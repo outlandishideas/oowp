@@ -42,8 +42,9 @@ function _oowp_init()
 	unregister_post_type('category');
 	unregister_post_type('post_tags');
 	if (is_admin()) {
+		add_action('admin_head', 'oowp_add_admin_styles');
 		wp_enqueue_script('oowp_js', plugin_dir_url(__FILE__) . 'oowp-admin.js', array('jquery'), false, true);
-		add_action( 'admin_menu', 'oowp_customise_admin_menu' );
+		add_action('admin_menu', 'oowp_customise_admin_menu');
 	} else {
 		wp_enqueue_style('oowp_css', plugin_dir_url(__FILE__) . 'oowp.css');
 	}
@@ -51,6 +52,52 @@ function _oowp_init()
 
 function oowp_customise_admin_menu() {
 	remove_menu_page('link-manager.php');
+}
+
+/**
+ * Attempts to style each post type menu item and posts page with its own icon, as found in the theme's 'images' directory.
+ * Icon names should have the form icon-{post_type} (for posts pages) or icon-menu-{post_type} (for menu items) in order
+ * to be automatically styled
+ */
+function oowp_add_admin_styles() {
+	$imagesDir = get_theme_root() . DIRECTORY_SEPARATOR . get_template() . DIRECTORY_SEPARATOR . 'images';
+	$styles = array();
+	global $_registered_postClasses;
+	if (is_dir($imagesDir)) {
+		$handle = opendir($imagesDir);
+		while (false !== ($file = readdir($handle))) {
+			$fullFile = $imagesDir . DIRECTORY_SEPARATOR . $file;
+			if (!filesize($fullFile)) continue;
+
+			$imageSize = @getimagesize($fullFile);
+			if (!$imageSize || !$imageSize[0] || !$imageSize[1]) continue;
+
+			foreach (array_keys($_registered_postClasses) as $postType) {
+				if (preg_match('/icon(-menu)?-' . $postType . '\.\w/', $file, $matches)) {
+					if (!array_key_exists($postType, $styles)) {
+						$styles[$postType] = array('menu'=>null, 'page'=>null);
+					}
+					$styles[$postType][count($matches) > 1 ? 'menu' : 'page'] = $file;
+				}
+			}
+		}
+	}
+	if ($styles) {
+		echo '<style type="text/css">';
+		foreach ($styles as $postType=>$icons) {
+			if ($icons['menu']) {
+				echo '#adminmenu #menu-posts-' . $postType . ' .wp-menu-image {
+					background: url(' . get_bloginfo('template_url') . '/images/' . $icons['menu'] . ') no-repeat center center !important;
+				}';
+			}
+			if ($icons['page']) {
+				echo '.icon32-posts-' . $postType . ' {
+					background: url(' . get_bloginfo('template_url') . '/images/' . $icons['page'] . ') no-repeat center center !important;
+				}';
+			}
+		}
+		echo '</style>';
+	}
 }
 
 /**
@@ -81,21 +128,15 @@ function oowp_initialiseClasses($dir)
 
 
 /**
- * @param $data = post_type, taxonomyName or Theme name
+ * Gets the class name for the given post type
+ * @param $postType
+ * @param string $default
+ * @return string
  */
-function ooGetClassName($data, $default = 'ooPost')
+function ooGetClassName($postType, $default = 'ooPost')
 {
 	global $_registered_postClasses;
-	$reversedClasses = array_reverse($_registered_postClasses);
-	$classStem       = to_camel_case($data, true);
-	foreach ($reversedClasses as $registeredClass) {
-		preg_match('/([A-Z].*)/m', $registeredClass, $matches);
-		$registeredStem = $matches[1];
-		if ($classStem == $registeredStem) {
-			return $registeredClass;
-		}
-	}
-	return $default;
+	return (array_key_exists($postType, $_registered_postClasses) ? $_registered_postClasses[$postType] : $default);
 }
 
 function oofp($data, $title = null)
@@ -282,4 +323,70 @@ function oowp_print_right_now_count($count, $postName, $singular, $plural, $stat
 	echo '</tr>';
 }
 
-?>
+/**
+ * @return string The full path of the wrapped template
+ */
+function oowp_layout_template_file() {
+	return OOWP_Layout::$innerTemplate;
+}
+
+/**
+ * @return string The name of the wrapped template
+ */
+function oowp_layout_template_name() {
+	return OOWP_Layout::$templateName;
+}
+
+/**
+ * This wraps all requested templates in a layout.
+ *
+ * Create layout.php in your root theme directory to use the same layout on all pages.
+ * Create layout-{template}.php for specific versions
+ *
+ * Example layout: include header, sidebar and footer on all pages, and wrap standard template in a section and a div
+ *
+ * <?php get_header( oowp_layout_template_name() ); ?>
+ *
+ *   <section id="primary">
+ *     <div id="content" role="main">
+ *       <?php include oowp_layout_template_file(); ?>
+ *     </div><!-- #content -->
+ *   </section><!-- #primary -->
+ *
+ * <?php get_sidebar( oowp_layout_template_name() ); ?>
+ * <?php get_footer( oowp_layout_template_name() ); ?>
+ *
+ * See http://scribu.net/wordpress/theme-wrappers.html
+ */
+
+add_filter( 'template_include', array( 'OOWP_Layout', 'wrap' ), 99 );
+class OOWP_Layout {
+
+	/**
+	 * Stores the full path to the main template file
+	 */
+	static $innerTemplate = null;
+
+	/**
+	 * Stores the base name of the template file; e.g. 'page' for 'page.php' etc.
+	 */
+	static $templateName = null;
+
+	static function wrap( $template ) {
+		self::$innerTemplate = $template;
+
+		self::$templateName = substr( basename( self::$innerTemplate ), 0, -4 );
+
+		$templates = array( 'layout.php' );
+
+		if ( 'index' == self::$templateName ) {
+			self::$templateName = null;
+		} else {
+			// prepend the more specific wrapper filename
+			array_unshift( $templates, sprintf( 'layout-%s.php', self::$templateName ) );
+		}
+
+		// revert to the template passed in if no layout template is found
+		return locate_template( $templates ) ?: $template;
+	}
+}

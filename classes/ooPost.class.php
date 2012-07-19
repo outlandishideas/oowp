@@ -656,7 +656,7 @@ class ooPost
 		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
 		global $_registered_postClasses;
-		$_registered_postClasses[] = $class;
+		$_registered_postClasses[$postType] = $class;
 		return $var;
 	}
 
