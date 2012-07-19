@@ -288,7 +288,13 @@ class ooPost
 	 * @return array
 	 */
 	public function getMetadata($name, $single = false) {
-		$meta = get_post_meta($this->ID, $name, $single);
+		$meta = null;
+		if (function_exists('get_field')) {
+			$meta = get_field($name, $this->ID);
+		}
+		if (!$meta) {
+			$meta = get_post_meta($this->ID, $name, $single);
+		}
 		return $meta;
 	}
 
@@ -315,8 +321,10 @@ class ooPost
 	}
 
 	public function getParent() {
+		$parentId = $this->isHierarchical() ? $this->post_parent : self::postTypeParentId();
+
 		return $this->getCacheValue() ?: $this->setCacheValue(
-			$this->isHierarchical() && !empty($this->post_parent) ? ooPost::fetch($this->post_parent) : null
+			!empty($parentId) ? ooPost::fetch($parentId) : null
 		);
 	}
 
@@ -563,16 +571,17 @@ class ooPost
 	}
 
 
+	protected function featuredImageAttachmentId() {
+		return $this->getMetadata('featured_image', true) ?: $this->getMetadata('image', true);
+	}
 
 	public function featuredImageUrl($image_size = 'thumbnail'){
-		$attachmentId = (function_exists('get_field') ? get_field('image', $this->ID) : $this->getMetadata('featured_image', true));
-		$image = wp_get_attachment_image_src($attachmentId, $image_size);
+		$image = wp_get_attachment_image_src($this->featuredImageAttachmentId(), $image_size);
 		return $image[0];
 	}
 
 	public function featuredImage($size = 'thumbnail', $attrs = array()){
-		$attachmentId = (function_exists('get_field') ? get_field('image', $this->ID) : $this->getMetadata('featured_image', true));
-		return wp_get_attachment_image($attachmentId, $size, 0, $attrs);
+		return wp_get_attachment_image($this->featuredImageAttachmentId(), $size, 0, $attrs);
 	}
 
 	function breadcrumbs(){

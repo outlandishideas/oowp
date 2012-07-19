@@ -56,8 +56,10 @@ function oowp_customise_admin_menu() {
 
 /**
  * Attempts to style each post type menu item and posts page with its own icon, as found in the theme's 'images' directory.
- * Icon names should have the form icon-{post_type} (for posts pages) or icon-menu-{post_type} (for menu items) in order
- * to be automatically styled
+ * In order to be automatically styled, icon names should have the following forms:
+ * - icon-{post_type} (for posts pages)
+ * - icon-menu-{post_type} (for menu items)
+ * - icon-menu-active-{post_type} (for menu items when active/hovered)
  */
 function oowp_add_admin_styles() {
 	$imagesDir = get_theme_root() . DIRECTORY_SEPARATOR . get_template() . DIRECTORY_SEPARATOR . 'images';
@@ -73,27 +75,37 @@ function oowp_add_admin_styles() {
 			if (!$imageSize || !$imageSize[0] || !$imageSize[1]) continue;
 
 			foreach (array_keys($_registered_postClasses) as $postType) {
-				if (preg_match('/icon(-menu)?-' . $postType . '\.\w/', $file, $matches)) {
+				if (preg_match('/icon(-menu(-active)?)?-' . $postType . '\.\w+$/', $file, $matches)) {
 					if (!array_key_exists($postType, $styles)) {
-						$styles[$postType] = array('menu'=>null, 'page'=>null);
+						$styles[$postType] = array();
 					}
-					$styles[$postType][count($matches) > 1 ? 'menu' : 'page'] = $file;
+					if (count($matches) == 3) {
+						$type = 'active-menu';
+					} else if (count($matches) == 2) {
+						$type = 'menu';
+					} else {
+						$type = 'page';
+					}
+					$styles[$postType][$type] = $file;
 				}
 			}
 		}
 	}
 	if ($styles) {
+		$patterns = array(
+			'menu' => '#adminmenu #menu-posts-{post_type} .wp-menu-image',
+			'active-menu' => '#adminmenu #menu-posts-{post_type}:hover .wp-menu-image, #adminmenu #menu-posts-{post_type}.wp-has-current-submenu .wp-menu-image',
+			'page' => '.icon32-posts-{post_type}'
+		);
 		echo '<style type="text/css">';
 		foreach ($styles as $postType=>$icons) {
-			if ($icons['menu']) {
-				echo '#adminmenu #menu-posts-' . $postType . ' .wp-menu-image {
-					background: url(' . get_bloginfo('template_url') . '/images/' . $icons['menu'] . ') no-repeat center center !important;
-				}';
-			}
-			if ($icons['page']) {
-				echo '.icon32-posts-' . $postType . ' {
-					background: url(' . get_bloginfo('template_url') . '/images/' . $icons['page'] . ') no-repeat center center !important;
-				}';
+			foreach ($patterns as $type=>$pattern) {
+				if (isset($icons[$type])) {
+					$pattern = preg_replace('/{post_type}/', $postType, $pattern);
+					echo $pattern . ' {
+						background: url(' . get_bloginfo('template_url') . '/images/' . $icons[$type] . ') no-repeat center center !important;
+					}';
+				}
 			}
 		}
 		echo '</style>';
