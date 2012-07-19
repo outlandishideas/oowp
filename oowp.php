@@ -17,7 +17,9 @@ function create_oo_posts($has_posts, $query)
 	return $query->posts;
 }
 
-$_registered_postClasses = array();
+$_registeredPostClasses = array();
+$_knownOowpClasses = array();
+
 // include all matching classes in ./classes and [current theme]/classes directories,
 // and register any subclasses of ooPost using their static register() function
 add_action('init', '_oowp_init');
@@ -33,8 +35,8 @@ function _oowp_init()
 	}
 
 	// call postRegistration on all registered classes, for e.g. creating p2p connections
-	global $_registered_postClasses;
-	foreach ($_registered_postClasses as $class) {
+	global $_registeredPostClasses;
+	foreach ($_registeredPostClasses as $class) {
 		$class::postRegistration();
 	}
 
@@ -64,7 +66,7 @@ function oowp_customise_admin_menu() {
 function oowp_add_admin_styles() {
 	$imagesDir = get_theme_root() . DIRECTORY_SEPARATOR . get_template() . DIRECTORY_SEPARATOR . 'images';
 	$styles = array();
-	global $_registered_postClasses;
+	global $_registeredPostClasses;
 	if (is_dir($imagesDir)) {
 		$handle = opendir($imagesDir);
 		while (false !== ($file = readdir($handle))) {
@@ -74,7 +76,7 @@ function oowp_add_admin_styles() {
 			$imageSize = @getimagesize($fullFile);
 			if (!$imageSize || !$imageSize[0] || !$imageSize[1]) continue;
 
-			foreach (array_keys($_registered_postClasses) as $postType) {
+			foreach (array_keys($_registeredPostClasses) as $postType) {
 				if (preg_match('/icon(-menu(-active)?)?-' . $postType . '\.\w+$/', $file, $matches)) {
 					if (!array_key_exists($postType, $styles)) {
 						$styles[$postType] = array();
@@ -122,6 +124,7 @@ function oowp_initialiseClasses($dir)
 		return;
 	}
 
+	global $_knownOowpClasses;
 	$handle = opendir($dir);
 	while ($file = readdir($handle)) {
 		$fullFile = $dir . DIRECTORY_SEPARATOR . $file;
@@ -131,8 +134,11 @@ function oowp_initialiseClasses($dir)
 			oofp('requiring ' . $file);
 			require_once($fullFile);
 			$className = $matches[1];
-			if (class_exists($className) && method_exists($className, 'init')) {
-				$className::init();
+			if (class_exists($className)) {
+				$_knownOowpClasses[] = $className;
+				if (method_exists($className, 'init')) {
+					$className::init();
+				}
 			}
 		}
 	}
@@ -140,15 +146,28 @@ function oowp_initialiseClasses($dir)
 
 
 /**
- * Gets the class name for the given post type
- * @param $postType
+ * Gets the class name for the given identifier (eg a post type).
+ * Searches through the known oowp classes for one whose name is a camel-case version of the argument (ignoring the prefix)
+ * @param $data
  * @param string $default
  * @return string
  */
-function ooGetClassName($postType, $default = 'ooPost')
+function ooGetClassName($data, $default = 'ooPost')
 {
-	global $_registered_postClasses;
-	return (array_key_exists($postType, $_registered_postClasses) ? $_registered_postClasses[$postType] : $default);
+	global $_knownOowpClasses;
+	$reversedClasses = array_reverse($_knownOowpClasses);
+	// generate something to look for, eg my_post_type => MyPostType
+	$classStem       = to_camel_case($data, true);
+	foreach ($reversedClasses as $registeredClass) {
+		// extract the stem by removing the lower case prefix, eg ooMyPostType -> MyPostType
+		if (preg_match('/([A-Z].*)/m', $registeredClass, $matches)) {
+			$registeredStem = $matches[1];
+			if ($classStem == $registeredStem) {
+				return $registeredClass;
+			}
+		}
+	}
+	return $default;
 }
 
 function oofp($data, $title = null)

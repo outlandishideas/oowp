@@ -369,9 +369,9 @@ class ooPost
 	 */
 	public function children()
 	{
-		global $_registered_postClasses;
+		global $_registeredPostClasses;
 		$posts = array();
-		foreach($_registered_postClasses as $class){
+		foreach($_registeredPostClasses as $class){
 			if($class::postTypeParentId() == $this->ID){
 				$posts = array_merge($posts, $class::fetchRoots()->posts);
 			}
@@ -639,9 +639,9 @@ class ooPost
 	}
 
 	/**
-	 * @static
-	 *
-	 * @return object|the|WP_Error
+	 * @static Registers the post type (if not a built-in type), by calling getRegistrationArgs,
+	 * then enables customisation of the admin screens for the post type
+	 * @return null|object|WP_Error
 	 */
 	public static final function register() {
 		$postType = static::postType();
@@ -667,8 +667,8 @@ class ooPost
 		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns'));
 		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
-		global $_registered_postClasses;
-		$_registered_postClasses[$postType] = $class;
+		global $_registeredPostClasses;
+		$_registeredPostClasses[$postType] = $class;
 		return $var;
 	}
 
