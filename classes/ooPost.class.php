@@ -321,8 +321,7 @@ class ooPost
 	}
 
 	public function getParent() {
-		$parentId = $this->isHierarchical() ? $this->post_parent : self::postTypeParentId();
-
+		$parentId = $this->isHierarchical() ? $this->post_parent : static::postTypeParentId();
 		return $this->getCacheValue() ?: $this->setCacheValue(
 			!empty($parentId) ? ooPost::fetch($parentId) : null
 		);
@@ -437,16 +436,19 @@ class ooPost
 		}
 
 		foreach($posts as $post){
-			$post->printMenuItem();
+			$post->printMenuItem($args);
 		}
 	}
 
 	// functions for printing with each of the provided partial files
-	public function printMenuItem() { $this->printPartial('menuitem'); }
 	public function printSidebar() { $this->printPartial('sidebar'); }
 	public function printMain() { $this->printPartial('main'); }
 	public function printItem() { $this->printPartial('item'); }
-
+	public function printMenuItem($args = array()) {
+		$args['max_depth'] = isset($args['max_depth'])? $args['max_depth'] : 0;
+		$args['current_depth'] = isset($args['current_depth'])? $args['current_depth'] : 0;
+		$this->printPartial('menuitem', $args);
+	}
 
 	/**
 	 * Prints the partial into an html string, which is returned
@@ -466,8 +468,9 @@ class ooPost
 	 * looks for $partialType-$post_type.php, then $partialType.php in the partials directory of
 	 * the theme, then the plugin
 	 * @param $partialType  - e.g. main,  item, promo, etc
+	 * @param array $args To be used by the partial file
 	 */
-	public final function printPartial($partialType)
+	public function printPartial($partialType, $args = array())
 	{
 		// look in the theme directory, then plugin directory
 		$places = array(get_stylesheet_directory() . '/partials', dirname(__FILE__) . "/../partials");
@@ -554,7 +557,7 @@ class ooPost
 	 */
 	public function isCurrentPageParent() {
 		$x = ooPost::getQueriedObject();
-		if ($x->post_parent == $this->ID) return true;
+		if ($x->post_parent == $this->ID || $x->postTypeParentId() == $this->ID) return true;
 
 		return false;
 	}
