@@ -540,7 +540,7 @@ class ooPost
 	 */
 	public function isCurrentPage() {
 		$x = ooPost::getQueriedObject();
-		if ($x->ID == $this->ID) return true;
+		if (isset($x) && $x->ID == $this->ID) return true;
 
 		return false;
 	}
@@ -549,7 +549,7 @@ class ooPost
 	 */
 	public function isCurrentPageParent() {
 		$x = ooPost::getQueriedObject();
-		if ($x->post_parent == $this->ID) return true;
+		if (isset($x) && $x->post_parent == $this->ID) return true;
 
 		return false;
 	}
@@ -558,7 +558,7 @@ class ooPost
 	 */
 	public function isCurrentPageAncestor() {
 		$x = ooPost::getQueriedObject();
-		while ($x) {
+		while (isset($x) && $x) {
 			if ($x->ID == $this->ID) return true;
 			$x = $x->getParent();
 		}
