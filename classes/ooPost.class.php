@@ -804,6 +804,18 @@ class ooPost
 	}
 
 	/**
+	 * Return the first post matching the arguments
+	 * @static
+	 * @param $args
+	 * @return null|ooPost
+	 */
+	static function fetchOne($args)
+	{
+		$query = static::fetchAll($args);
+		return $query->posts ? $query->post : null;
+	}
+
+	/**
 	 * @static Returns just the ooPosts from fetchAllQuery as an array
 	 * @param array $args
 	 * @return array
