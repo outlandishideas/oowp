@@ -5,7 +5,10 @@ Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
 Description: A brief description of the Plugin.
 Version: 0.2
 */
-//
+
+/**
+ * Converts all wp post objects in the query into oowp post objects
+ */
 add_action('the_posts', 'create_oo_posts', 100, 2);
 function create_oo_posts($has_posts, $query)
 {
@@ -19,6 +22,7 @@ function create_oo_posts($has_posts, $query)
 
 $_registeredPostClasses = array();
 $_knownOowpClasses = array();
+$_oowpTheme = null;
 
 // include all matching classes in ./classes and [current theme]/classes directories,
 // and register any subclasses of ooPost using their static register() function
@@ -34,15 +38,30 @@ function _oowp_init()
 		oowp_initialiseClasses($dir);
 	}
 
-	// call postRegistration on all registered classes, for e.g. creating p2p connections
+	// call postRegistration on all registered post types, for e.g. creating p2p connections
 	global $_registeredPostClasses;
 	foreach ($_registeredPostClasses as $class) {
 		$class::postRegistration();
 	}
 
+	// set up a singleton for the theme
+	global $_knownOowpClasses;
+	global $_oowpTheme;
+	$themeClass = 'ooTheme';
+	foreach ($_knownOowpClasses as $class) {
+		if (is_subclass_of($class, 'ooTheme')) {
+			$themeClass = $class;
+		}
+	}
+	if (class_exists($themeClass)) {
+		$_oowpTheme = new $themeClass();
+		$_oowpTheme->registerHooks();
+	}
+
 	unregister_post_type('post');
-	unregister_post_type('category');
-	unregister_post_type('post_tags');
+	unregister_taxonomy('category');
+	unregister_taxonomy('post_tag');
+
 	if (is_admin()) {
 		add_action('admin_head', 'oowp_add_admin_styles');
 		wp_enqueue_script('oowp_js', plugin_dir_url(__FILE__) . 'oowp-admin.js', array('jquery'), false, true);
@@ -59,7 +78,7 @@ function oowp_customise_admin_menu() {
 /**
  * Attempts to style each post type menu item and posts page with its own icon, as found in the theme's 'images' directory.
  * In order to be automatically styled, icon names should have the following forms:
- * - icon-{post_type} (for posts pages)
+ * - icon-{post_type} (for posts pages, next to header)
  * - icon-menu-{post_type} (for menu items)
  * - icon-menu-active-{post_type} (for menu items when active/hovered)
  */
@@ -178,7 +197,7 @@ function oofp($data, $title = null)
 }
 
 /**
- * Translates a camel case string into a string with underscores (e.g. firstName -&gt; first_name)
+ * Translates a camel case string into a string with underscores (e.g. firstName -> first_name)
  * @param    string   $str    String in camel case format
  * @return    string            $str Translated into underscore format
  */
@@ -190,7 +209,7 @@ function from_camel_case($str)
 }
 
 /**
- * Translates a string with underscores into camel case (e.g. first_name -&gt; firstName)
+ * Translates a string with underscores into camel case (e.g. first_name -> firstName)
  * @param    string   $str                     String in underscore format
  * @param    bool     $capitalise_first_char   If true, capitalise the first char in $str
  * @return   string                              $str translated into camel caps
@@ -211,15 +230,8 @@ if (!function_exists('unregister_post_type')) :
 		if (isset($wp_post_types[$post_type])) {
 			unset($wp_post_types[$post_type]);
 
-			add_action('admin_menu', function() use ($post_type)
-			{
-				if ($post_type == 'post') {
-					remove_menu_page('edit.php');
-				} else {
-
-					remove_menu_page('edit.php' . $post_type == 'post' ? "" : '?post_type=' . $post_type);
-				}
-
+			add_action('admin_menu', function() use ($post_type) {
+				remove_menu_page('edit.php' . ($post_type == 'post' ? "" : "?post_type=$post_type"));
 			}, $post_type);
 			return true;
 		}
@@ -248,7 +260,7 @@ function unregister_taxonomy($taxonomy, $object_type = '')
 		return false;
 
 	if (!empty($object_type)) {
-		+$i = array_search($object_type, $wp_taxonomies[$taxonomy]->object_type);
+		$i = array_search($object_type, $wp_taxonomies[$taxonomy]->object_type);
 
 		if (false !== $i)
 			unset($wp_taxonomies[$taxonomy]->object_type[$i]);
