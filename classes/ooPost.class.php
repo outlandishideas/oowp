@@ -782,13 +782,13 @@ class ooPost
 			$defaults['order'] = 'asc';
 		}
 		$args     = wp_parse_args($args, $defaults);
-		$query    = new WP_Query($args);
+		$query    = new ooWP_Query($args);
 
 		if ($query->query_vars['error']) {
 			die('Query error ' . $query->query_vars['error']);
 		}
 
-		foreach ($query->get_posts() as $i => $post) { //get_posts to apply filters
+		foreach ($query->posts as $i => $post) {
 			$query->posts[$i] = static::fetch($post);
 		}
 
@@ -802,9 +802,7 @@ class ooPost
 	 */
 	static function fetchAll($args = array())
 	{
-		$query = static::fetchAllQuery($args);
-		$iterable = new ooWP_Query($query);
-		return $iterable;
+		return static::fetchAllQuery($args);
 	}
 
 	/**
