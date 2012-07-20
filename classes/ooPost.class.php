@@ -44,10 +44,16 @@ class ooPost
 	 * @static
 	 * Should be run with the wordpress init hook
 	 */
-	public static function init()
+	public final static function init()
 	{
 		static::register();
 	}
+
+	/**
+	 * @static
+	 * Called after all oowp classes have been registered
+	 */
+	public static function postRegistration() { /* do nothing by default */ }
 
 	/**
 	 * @param $name
@@ -198,41 +204,42 @@ class ooPost
 
 	/**
 	 * @param $targetPostType string e.g. post, event - the type of post you want to connect to
-	 * @param bool $single - just return the first?
+	 * @param bool $single - just return the first/only post?
 	 * @param array $args - augment or overwrite the default parameters for the WP_Query
 	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
 	 * @return array
 	 */
 	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
 	{
-		if (!function_exists('p2p_register_connection_type'))
-			return;
-		$postType = $this::postType();
-		$types    = array($targetPostType, $postType);
-		sort($types);
-		$connection_name = implode('_', $types);
+		$toReturn = $single ? null : array();
+		if (function_exists('p2p_register_connection_type')) {
+			$postType = $this::postType();
+			$types    = array($targetPostType, $postType);
+			sort($types);
+			$connection_name = implode('_', $types);
 
-		#todo optimisation: check to see if this post type is hierarchical first
-		if ($hierarchical) {
-			$connected_items = array_merge($this->getDescendantIds(), array($this->ID));
-		} else {
-			$connected_items = $this->ID;
+			#todo optimisation: check to see if this post type is hierarchical first
+			if ($hierarchical) {
+				$connected_items = array_merge($this->getDescendantIds(), array($this->ID));
+			} else {
+				$connected_items = $this->ID;
+			}
+
+			$defaults = array(
+				'connected_type'  => $connection_name,
+				'connected_items' => $connected_items,
+				'post_type'       => $targetPostType,
+			);
+
+			$args   = array_merge($defaults, $args);
+			$result = self::fetchAll($args);
+
+			if ($result && $result->posts) {
+				$toReturn = $single ? $result->posts[0] : $result->posts;
+			}
 		}
 
-		$defaults = array(
-			'connected_type'  => $connection_name,
-			'connected_items' => $connected_items,
-			'post_type'       => $targetPostType,
-		);
-
-		$args   = array_merge($defaults, $args);
-		$result = self::fetchAll($args);
-
-		if ($result && $single && $result->posts)
-			return $result->posts[0];
-
-		return $result;
-
+		return $toReturn;
 	}
 
 	static function walkTree($p, &$current_descendants = array())
@@ -281,7 +288,13 @@ class ooPost
 	 * @return array
 	 */
 	public function getMetadata($name, $single = false) {
-		$meta = get_post_meta($this->ID, $name, $single);
+		$meta = null;
+		if (function_exists('get_field')) {
+			$meta = get_field($name, $this->ID);
+		}
+		if (!$meta) {
+			$meta = get_post_meta($this->ID, $name, $single);
+		}
 		return $meta;
 	}
 
@@ -308,8 +321,9 @@ class ooPost
 	}
 
 	public function getParent() {
+		$parentId = $this->isHierarchical() ? $this->post_parent : static::postTypeParentId();
 		return $this->getCacheValue() ?: $this->setCacheValue(
-			$this->isHierarchical() && !empty($this->post_parent) ? ooPost::fetch($this->post_parent) : null
+			!empty($parentId) ? ooPost::fetch($parentId) : null
 		);
 	}
 
@@ -340,10 +354,7 @@ class ooPost
 
 	public function excerpt()
 	{
-		global $post;
-		$post = $this;
-		setup_postdata($this);
-		return apply_filters('the_excerpt', get_the_excerpt());
+		return $this->callGlobalPost('get_the_excerpt');
 	}
 
 	public function permalink()
@@ -351,12 +362,16 @@ class ooPost
 		return get_permalink($this);
 	}
 
+	/**
+	 * Fetches all posts (of any post_type) whose post_parent is this post, as well as
+	 * the root posts of any post_types whose declared postTypeParentId is this post
+	 * @return array
+	 */
 	public function children()
 	{
-		global $_registered_ooClasses;
+		global $_registeredPostClasses;
 		$posts = array();
-		foreach($_registered_ooClasses as $class){
-			$tmp = $class::postTypeParentId();
+		foreach($_registeredPostClasses as $class){
 			if($class::postTypeParentId() == $this->ID){
 				$posts = array_merge($posts, $class::fetchRoots()->posts);
 			}
@@ -366,6 +381,11 @@ class ooPost
 		return $children;
 	}
 
+	/**
+	 * Executes a wordpress function, setting $this as the global $post first, then resets the global post data.
+	 * Expects the first argument to be the function, followed by any arguments
+	 * @return mixed
+	 */
 	protected function callGlobalPost()
 	{
 		$args     = func_get_args();
@@ -380,14 +400,7 @@ class ooPost
 
 	public function author()
 	{
-		return $this->callGlobalPost(function()
-		{
-			return get_the_author();
-		});
-//		global $post;
-//		setup_postdata($this);
-//		return get_the_author($this);
-//		wp_reset_postdata();
+		return $this->callGlobalPost('get_the_author');
 	}
 
 
@@ -409,12 +422,11 @@ class ooPost
 		return implode(', ', $links);
 	}
 
-	public function printMenuItem($args = array()) {
-        $args['max_depth'] = isset($args['max_depth'])? $args['max_depth'] : 0;
-        $args['current_depth'] = isset($args['current_depth'])? $args['current_depth'] : 0;
-		$this->printPartial('menuitem', $args);
-	}
-
+	/**
+	 * @static
+	 * Prints each of the post_type roots using the 'menuitem' partial
+	 * @param array $args
+	 */
 	public static function printMenuItems($args = array()){
 		if(!isset($args['post_parent'])){
 			$posts = static::fetchRoots($args);
@@ -428,28 +440,22 @@ class ooPost
 		}
 	}
 
-
-	public function printSidebar()
-	{
-		$this->printPartial('sidebar');
+	// functions for printing with each of the provided partial files
+	public function printSidebar() { $this->printPartial('sidebar'); }
+	public function printMain() { $this->printPartial('main'); }
+	public function printItem() { $this->printPartial('item'); }
+	public function printMenuItem($args = array()) {
+		$args['max_depth'] = isset($args['max_depth'])? $args['max_depth'] : 0;
+		$args['current_depth'] = isset($args['current_depth'])? $args['current_depth'] : 0;
+		$this->printPartial('menuitem', $args);
 	}
 
-	public function printMain()
-	{
-		$this->printPartial('main');
-	}
-
-	public function printItem()
-	{
-		$this->printPartial('item');
-	}
-
-
-	/** PROTECTED to ensure that it's not used directly in templates but instead used through printMain, printItem, etc. This allows classes to add a custom 'printItem' or 'printSidebar' method so that multiple post types can share a single partial
+	/**
+	 * Prints the partial into an html string, which is returned
 	 * @param $partialType
 	 * @return string
 	 */
-	protected function getPartial($partialType)
+	public final function getPartial($partialType)
 	{
 		ob_start();
 		$this->printPartial($partialType);
@@ -459,12 +465,14 @@ class ooPost
 	}
 
 	/**
-	 * looks for partial-$partialType-$post_type.php the partial-$partialType.php
+	 * looks for $partialType-$post_type.php, then $partialType.php in the partials directory of
+	 * the theme, then the plugin
 	 * @param $partialType  - e.g. main,  item, promo, etc
+	 * @param array $args To be used by the partial file
 	 */
-	protected function printPartial($partialType, $args = array())
+	public function printPartial($partialType, $args = array())
 	{
-		// look in the stylesheet directory, then plugin directory
+		// look in the theme directory, then plugin directory
 		$places = array(get_stylesheet_directory() . '/partials', dirname(__FILE__) . "/../partials");
 		$paths  = array();
 
@@ -549,7 +557,7 @@ class ooPost
 	 */
 	public function isCurrentPageParent() {
 		$x = ooPost::getQueriedObject();
-		if (isset($x) && $x->post_parent == $this->ID) return true;
+		if (isset($x) && ($x->post_parent == $this->ID || $x->postTypeParentId() == $this->ID)) return true;
 
 		return false;
 	}
@@ -566,18 +574,17 @@ class ooPost
 	}
 
 
+	protected function featuredImageAttachmentId() {
+		return $this->getMetadata('featured_image', true) ?: $this->getMetadata('image', true);
+	}
 
 	public function featuredImageUrl($image_size = 'thumbnail'){
-
-		$image = wp_get_attachment_image_src( get_field('image', $this->ID) , 'mugshot' );
+		$image = wp_get_attachment_image_src($this->featuredImageAttachmentId(), $image_size);
 		return $image[0];
 	}
 
 	public function featuredImage($size = 'thumbnail', $attrs = array()){
-		$imgSrc =  $this->featuredImageUrl();
-		if($imgSrc){
-			return wp_get_attachment_image(get_field('image', $this->ID), $size, 0, $attrs);
-		}
+		return wp_get_attachment_image($this->featuredImageAttachmentId(), $size, 0, $attrs);
 	}
 
 	function breadcrumbs(){
@@ -632,11 +639,11 @@ class ooPost
 	}
 
 	/**
-	 * @static
-	 *
-	 * @return object|the|WP_Error
+	 * @static Registers the post type (if not a built-in type), by calling getRegistrationArgs,
+	 * then enables customisation of the admin screens for the post type
+	 * @return null|object|WP_Error
 	 */
-	static function register() {
+	public static final function register() {
 		$postType = static::postType();
 		if ($postType == 'page' || $postType == 'post' || $postType == 'attachment' ) {
 			$var = null;
@@ -660,6 +667,8 @@ class ooPost
 		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns'));
 		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
+		global $_registeredPostClasses;
+		$_registeredPostClasses[$postType] = $class;
 		return $var;
 	}
 
@@ -752,7 +761,7 @@ class ooPost
 	}
 
 	/**
-	 * @static factory class fetches a post of the appropriate subclass
+	 * @static factory class creates a post of the appropriate ooPost subclass, populated with the given data
 	 * @param null $data
 	 * @return ooPost - an ooPost object or subclass if it exists
 	 */
@@ -765,7 +774,7 @@ class ooPost
 
 			return new $className($data);
 		}
-
+		return null;
 	}
 
 	/**
@@ -804,6 +813,7 @@ class ooPost
 	}
 
 	/**
+
 	 * Return the first post matching the arguments
 	 * @static
 	 * @param $args
@@ -816,7 +826,7 @@ class ooPost
 	}
 
 	/**
-	 * @static Returns just the ooPosts from fetchAllQuery as an array
+	 * @static Returns the roots of this post type (i.e those whose post_parent is self::postTypeParentId)
 	 * @param array $args
 	 * @return array
 	 */
