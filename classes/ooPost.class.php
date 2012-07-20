@@ -782,7 +782,7 @@ class ooPost
 	 * @param array $args - accepts a wp_query $args array which overwrites the defaults
 	 * @return \WP_Query
 	 */
-	public static function fetchAllQuery($args = array())
+	public static function fetchAll($args = array())
 	{
 		$defaults = array('post_type'      => static::postType(),
 						  'posts_per_page' => -1);
@@ -805,13 +805,11 @@ class ooPost
 	}
 
 	/**
-	 * @static Returns just the ooPosts from fetchAllQuery as an array
-	 * @param array $args
-	 * @return array
+	 * @deprecated
 	 */
-	static function fetchAll($args = array())
+	static function fetchAllQuery($args = array())
 	{
-		return static::fetchAllQuery($args);
+		return static::fetchAll($args);
 	}
 
 	/**
