@@ -419,7 +419,6 @@ class ooPost
 		if(!isset($args['post_parent'])){
 			$posts = static::fetchRoots($args);
 		}else{
-			$args['depth'] = 1;
 			$posts = static::fetchAll($args);
 		}
 
