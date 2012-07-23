@@ -2,9 +2,8 @@
 	if ($post->isCurrentPage()) echo ' current_page_item';
 	if ($post->isCurrentPageParent()) echo ' current_page_parent';
 	if ($post->isCurrentPageAncestor()) echo ' current_page_ancestor'; ?>">
-	<a href="<?php echo $post->permalink(); ?>">
-		<span><?php echo $post->title(); ?></span>
-	</a>
+
+	<a href="<?php echo $post->permalink(); ?>"><?php echo $post->title(); ?></a>
 	<?php
 
     $args['current_depth']++;
