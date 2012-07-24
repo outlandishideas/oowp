@@ -219,12 +219,17 @@ class ooPost
 	 */
 	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
 	{
-		$toReturn = $single ? null : array();
 		if (function_exists('p2p_register_connection_type')) {
 			$postType = $this::postType();
-			$types    = array($targetPostType, $postType);
-			sort($types);
-			$connection_name = implode('_', $types);
+            if(!is_array($targetPostType)) {
+                $targetPostType = array($targetPostType);
+            }
+            $connection_name = array();
+            foreach ($targetPostType as $targetType) {
+                $types = array($targetType, $postType);
+                sort($types);
+                $connection_name[] = implode('_', $types);
+            }
 
 			#todo optimisation: check to see if this post type is hierarchical first
 			if ($hierarchical) {
@@ -242,8 +247,9 @@ class ooPost
 			$args   = array_merge($defaults, $args);
 			$result = self::fetchAll($args);
 
-			if ($result && $result->posts) {
-				$toReturn = $single ? $result->posts[0] : $result->posts;
+            $toReturn = $single ? null : $result;
+            if ($result && $result->posts) {
+				$toReturn = $single ? $result->posts[0] : $result;
 			}
 		}
 
@@ -817,6 +823,19 @@ class ooPost
 	static function fetchAllQuery($args = array())
 	{
 		return static::fetchAll($args);
+	}
+
+	/**
+
+	 * Return the first post matching the arguments
+	 * @static
+	 * @param $args
+	 * @return null|ooPost
+	 */
+	static function fetchOne($args)
+	{
+		$query = static::fetchAll($args);
+		return $query->posts ? $query->post : null;
 	}
 
 	/**
