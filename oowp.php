@@ -59,8 +59,8 @@ function _oowp_init()
 	}
 
 	unregister_post_type('post');
-	unregister_taxonomy('category');
-	unregister_taxonomy('post_tag');
+//	unregister_taxonomy('category');
+//	unregister_taxonomy('post_tag');
 
 	if (is_admin()) {
 		add_action('admin_head', 'oowp_add_admin_styles');

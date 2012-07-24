@@ -219,6 +219,7 @@ class ooPost
 	 */
 	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
 	{
+		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
 			$postType = $this::postType();
             if(!is_array($targetPostType)) {
@@ -247,9 +248,10 @@ class ooPost
 			$args   = array_merge($defaults, $args);
 			$result = self::fetchAll($args);
 
-            $toReturn = $single ? null : $result;
-            if ($result && $result->posts) {
-				$toReturn = $single ? $result->posts[0] : $result;
+			if (!$single) {
+				$toReturn = $result;
+			} else if ($result && $result->posts) {
+				$toReturn = $result->posts[0];
 			}
 		}
 
