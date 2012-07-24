@@ -51,6 +51,14 @@ class ooPost
 
 	/**
 	 * @static
+	 * Should be run with the wordpress init hook
+	 */
+	public final static function bruv()
+	{
+	}
+
+	/**
+	 * @static
 	 * Called after all oowp classes have been registered
 	 */
 	public static function postRegistration() { /* do nothing by default */ }
