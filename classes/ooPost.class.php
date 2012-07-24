@@ -819,6 +819,19 @@ class ooPost
 	}
 
 	/**
+
+	 * Return the first post matching the arguments
+	 * @static
+	 * @param $args
+	 * @return null|ooPost
+	 */
+	static function fetchOne($args)
+	{
+		$query = static::fetchAll($args);
+		return $query->posts ? $query->post : null;
+	}
+
+	/**
 	 * @static Returns the roots of this post type (i.e those whose post_parent is self::postTypeParentId)
 	 * @param array $args
 	 * @return array
