@@ -393,22 +393,33 @@ class ooPost
 	/**
 	 * Fetches all posts (of any post_type) whose post_parent is this post, as well as
 	 * the root posts of any post_types whose declared postTypeParentId is this post
-	 * @return array
+	 * @param array $args
+	 * @return ooPost[]
 	 */
 	public function children($args = array())
 	{
-		global $_registeredPostClasses;
 		$posts = array();
-		foreach($_registeredPostClasses as $class){
-			if($class::postTypeParentId() == $this->ID){
-				$posts = array_merge($posts, $class::fetchRoots()->posts);
-			}
+		foreach($this->childPostClassNames() as $className){
+			$posts = array_merge($posts, $className::fetchRoots()->posts);
 		}
         $defaults = array('post_parent' => $this->ID);
         $args = wp_parse_args($args, $defaults);
 		$children = static::fetchAll($args);
 		$children->posts = array_merge($children->posts, $posts);
 		return $children;
+	}
+
+	/**
+	 * @return array Class names of ooPost types having this object as their parent
+	 */
+	public function childPostClassNames()
+	{
+		global $_registeredPostClasses;
+		$names = array();
+		foreach ($_registeredPostClasses as $class) {
+			if ($class::postTypeParentId() == $this->ID) $names[] = $class;
+		}
+		return $names;
 	}
 
 	/**
