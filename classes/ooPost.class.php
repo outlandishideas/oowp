@@ -247,6 +247,17 @@ class ooPost
 			$args   = array_merge($defaults, $args);
 			$result = self::fetchAll($args);
 
+			if ($hierarchical) { //filter out any duplicate posts
+				$post_ids = array();
+				foreach($result->posts as $i => $post){
+					if(in_array($post->ID, $post_ids))
+						unset($result->posts[$i]);
+
+					$post_ids[] = $post->ID;
+				}
+
+			}
+
             $toReturn = $single ? null : $result;
             if ($result && $result->posts) {
 				$toReturn = $single ? $result->posts[0] : $result;
