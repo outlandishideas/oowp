@@ -51,6 +51,14 @@ class ooPost
 
 	/**
 	 * @static
+	 * Should be run with the wordpress init hook
+	 */
+	public final static function bruv()
+	{
+	}
+
+	/**
+	 * @static
 	 * Called after all oowp classes have been registered
 	 */
 	public static function postRegistration() { /* do nothing by default */ }
@@ -211,6 +219,7 @@ class ooPost
 	 */
 	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
 	{
+		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
 			$postType = $this::postType();
             if(!is_array($targetPostType)) {
@@ -239,9 +248,22 @@ class ooPost
 			$args   = array_merge($defaults, $args);
 			$result = self::fetchAll($args);
 
+			if ($hierarchical) { //filter out any duplicate posts
+				$post_ids = array();
+				foreach($result->posts as $i => $post){
+					if(in_array($post->ID, $post_ids))
+						unset($result->posts[$i]);
+
+					$post_ids[] = $post->ID;
+				}
+
+			}
+
             $toReturn = $single ? null : $result;
-            if ($result && $result->posts) {
-				$toReturn = $single ? $result->posts[0] : $result;
+			if (!$single) {
+				$toReturn = $result;
+			} else if ($result && $result->posts) {
+				$toReturn = $result->posts[0];
 			}
 		}
 
@@ -439,7 +461,6 @@ class ooPost
 		if(!isset($args['post_parent'])){
 			$posts = static::fetchRoots($args);
 		}else{
-			$args['depth'] = 1;
 			$posts = static::fetchAll($args);
 		}
         //print_r ($posts);
