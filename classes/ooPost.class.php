@@ -373,7 +373,7 @@ class ooPost
 	 * the root posts of any post_types whose declared postTypeParentId is this post
 	 * @return array
 	 */
-	public function children()
+	public function children($args = array())
 	{
 		global $_registeredPostClasses;
 		$posts = array();
@@ -382,7 +382,9 @@ class ooPost
 				$posts = array_merge($posts, $class::fetchRoots()->posts);
 			}
 		}
-		$children = static::fetchAll(array('post_parent' => $this->ID));
+        $defaults = array('post_parent' => $this->ID);
+        $args = wp_parse_args($args, $defaults);
+		$children = static::fetchAll($args);
 		$children->posts = array_merge($children->posts, $posts);
 		return $children;
 	}
@@ -440,7 +442,7 @@ class ooPost
 			$args['depth'] = 1;
 			$posts = static::fetchAll($args);
 		}
-
+        //print_r ($posts);
 		foreach($posts as $post){
 			$post->printMenuItem($args);
 		}
