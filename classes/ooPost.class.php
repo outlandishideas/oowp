@@ -882,6 +882,33 @@ class ooPost
 		return is_post_type_hierarchical(static::postType());
 	}
 
+	/**
+	 * Create a fake instance of a post.
+	 * @static
+	 * @param $args
+	 * @return ooPost
+	 */
+	public static function makeFake($args) {
+		//set defaults
+		$args = wp_parse_args($args, array(
+			'ID' => 0,
+			'post_parent' => 0,
+			'post_title' => '',
+			'post_name' => '',
+			'post_content' => '',
+			'post_type' => 'fake',
+			'post_status' => 'publish',
+			'post_date' => date('Y-m-d')
+		));
+
+		//slugify title
+		if ($args['post_title'] && !$args['post_name']) {
+			$args['post_name'] = sanitize_title_with_dashes($args['post_title']);
+		}
+
+		return new static($args);
+	}
+
 #endregion
 
 
