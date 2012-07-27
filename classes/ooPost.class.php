@@ -394,20 +394,33 @@ class ooPost
 	/**
 	 * Fetches all posts (of any post_type) whose post_parent is this post, as well as
 	 * the root posts of any post_types whose declared postTypeParentId is this post
-	 * @return array
+	 * @param array $args
+	 * @return ooPost[]
 	 */
-	public function children()
+	public function children($args = array())
 	{
-		global $_registeredPostClasses;
 		$posts = array();
-		foreach($_registeredPostClasses as $class){
-			if($class::postTypeParentId() == $this->ID){
-				$posts = array_merge($posts, $class::fetchRoots()->posts);
-			}
+		foreach($this->childPostClassNames() as $className){
+			$posts = array_merge($posts, $className::fetchRoots()->posts);
 		}
-		$children = static::fetchAll(array('post_parent' => $this->ID));
+        $defaults = array('post_parent' => $this->ID);
+        $args = wp_parse_args($args, $defaults);
+		$children = static::fetchAll($args);
 		$children->posts = array_merge($children->posts, $posts);
 		return $children;
+	}
+
+	/**
+	 * @return array Class names of ooPost types having this object as their parent
+	 */
+	public function childPostClassNames()
+	{
+		global $_registeredPostClasses;
+		$names = array();
+		foreach ($_registeredPostClasses as $class) {
+			if ($class::postTypeParentId() == $this->ID) $names[] = $class;
+		}
+		return $names;
 	}
 
 	/**
@@ -462,7 +475,7 @@ class ooPost
 		}else{
 			$posts = static::fetchAll($args);
 		}
-
+        //print_r ($posts);
 		foreach($posts as $post){
 			$post->printMenuItem($args);
 		}
@@ -868,6 +881,33 @@ class ooPost
 
 	static function isHierarchical() {
 		return is_post_type_hierarchical(static::postType());
+	}
+
+	/**
+	 * Create a fake instance of a post.
+	 * @static
+	 * @param $args
+	 * @return ooPost
+	 */
+	public static function makeFake($args) {
+		//set defaults
+		$args = wp_parse_args($args, array(
+			'ID' => 0,
+			'post_parent' => 0,
+			'post_title' => '',
+			'post_name' => '',
+			'post_content' => '',
+			'post_type' => 'fake',
+			'post_status' => 'publish',
+			'post_date' => date('Y-m-d')
+		));
+
+		//slugify title
+		if ($args['post_title'] && !$args['post_name']) {
+			$args['post_name'] = sanitize_title_with_dashes($args['post_title']);
+		}
+
+		return new static($args);
 	}
 
 #endregion
