@@ -349,7 +349,8 @@ class ooPost
 	}
 
 	public function getParent() {
-		$parentId = $this->isHierarchical() ? $this->post_parent : static::postTypeParentId();
+		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
+
 		return $this->getCacheValue() ?: $this->setCacheValue(
 			!empty($parentId) ? ooPost::fetch($parentId) : null
 		);
