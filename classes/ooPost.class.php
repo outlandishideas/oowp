@@ -350,7 +350,7 @@ class ooPost
 
 	public function getParent() {
 		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
-
+		//stupid git. ignore this.
 		return $this->getCacheValue() ?: $this->setCacheValue(
 			!empty($parentId) ? ooPost::fetch($parentId) : null
 		);
