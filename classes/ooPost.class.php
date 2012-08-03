@@ -825,8 +825,14 @@ class ooPost
 	 */
 	public static function fetchAll($args = array())
 	{
-		$defaults = array('post_type'      => static::postType(),
-						  'posts_per_page' => -1);
+		global $wp_post_types;
+
+		$postType = static::postType();
+		$defaults = array(
+			'post_type'      => array_key_exists($postType, $wp_post_types) ? $postType : null,
+			'posts_per_page' => -1,
+			'post_status' => 'publish'
+		);
 		if (static::isHierarchical()) {
 			$defaults['orderby'] = 'menu_order';
 			$defaults['order'] = 'asc';
