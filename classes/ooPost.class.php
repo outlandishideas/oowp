@@ -516,7 +516,7 @@ class ooPost
 		// look in the theme directory, then plugin directory
 		$places = array(get_stylesheet_directory() . '/partials', dirname(__FILE__) . "/../partials");
 		$paths  = array();
-
+		extract($args);
 		$specific = array();
 		$nonspecific = array();
 		foreach ($places as $path) {
