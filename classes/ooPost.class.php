@@ -217,7 +217,7 @@ class ooPost
 	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
 	 * @return array
 	 */
-	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
+	protected function getConnected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false)
 	{
 		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
@@ -245,8 +245,8 @@ class ooPost
 				'post_type'       => $targetPostType,
 			);
 
-			$args   = array_merge($defaults, $args);
-			$result = self::fetchAll($args);
+			$queryArgs   = array_merge($defaults, $queryArgs);
+			$result = self::fetchAll($queryArgs);
 
 			if ($hierarchical) { //filter out any duplicate posts
 				$post_ids = array();
@@ -394,18 +394,18 @@ class ooPost
 	/**
 	 * Fetches all posts (of any post_type) whose post_parent is this post, as well as
 	 * the root posts of any post_types whose declared postTypeParentId is this post
-	 * @param array $args
+	 * @param array $queryArgs
 	 * @return ooPost[]
 	 */
-	public function children($args = array())
+	public function children($queryArgs = array())
 	{
 		$posts = array();
 		foreach($this->childPostClassNames() as $className){
 			$posts = array_merge($posts, $className::fetchRoots()->posts);
 		}
         $defaults = array('post_parent' => $this->ID);
-        $args = wp_parse_args($args, $defaults);
-		$children = static::fetchAll($args);
+        $queryArgs = wp_parse_args($queryArgs, $defaults);
+		$children = static::fetchAll($queryArgs);
 		$children->posts = array_merge($children->posts, $posts);
 		return $children;
 	}
@@ -468,19 +468,19 @@ class ooPost
 	/**
 	 * @static
 	 * Prints each of the post_type roots using the 'menuitem' partial
-	 * @param array $args
+	 * @param array $queryArgs
 	 */
-	public static function printMenuItems($args = array()){
-		if(!isset($args['post_parent'])){
-			$posts = static::fetchRoots($args);
+	public static function printMenuItems($queryArgs = array(), $menuArgs = array()){
+		if(!isset($queryArgs['post_parent'])){
+			$posts = static::fetchRoots($queryArgs);
 		}else{
-			$posts = static::fetchAll($args);
+			$posts = static::fetchAll($queryArgs);
 		}
 
-		$args['max_depth'] = isset($args['max_depth']) ? $args['max_depth'] : 0;
-		$args['current_depth'] = isset($args['current_depth']) ? $args['current_depth'] : 0;
+		$menuArgs['max_depth'] = isset($menuArgs['max_depth']) ? $menuArgs['max_depth'] : 0;
+		$menuArgs['current_depth'] = isset($menuArgs['current_depth']) ? $menuArgs['current_depth'] : 0;
 		foreach($posts as $post){
-			$post->printMenuItem($args);
+			$post->printMenuItem($menuArgs);
 		}
 	}
 
@@ -488,10 +488,10 @@ class ooPost
 	public function printSidebar() { $this->printPartial('sidebar'); }
 	public function printMain() { $this->printPartial('main'); }
 	public function printItem() { $this->printPartial('item'); }
-	public function printMenuItem($args = array()) {
-		$args['max_depth'] = isset($args['max_depth'])? $args['max_depth'] : 0;
-		$args['current_depth'] = isset($args['current_depth'])? $args['current_depth'] : 0;
-		$this->printPartial('menuitem', $args);
+	public function printMenuItem($menuArgs = array()) {
+		$menuArgs['max_depth'] = isset($menuArgs['max_depth'])? $menuArgs['max_depth'] : 0;
+		$menuArgs['current_depth'] = isset($menuArgs['current_depth'])? $menuArgs['current_depth'] : 0;
+		$this->printPartial('menuitem', $menuArgs);
 	}
 
 	/**
@@ -660,8 +660,8 @@ class ooPost
 	}
 
 	public function attachments(){
-		$args = array( 'post_type' => 'attachment', 'numberposts' => -1, 'post_status' => 'inherit', 'post_parent' => $this->ID );
-		return self::fetchAll($args);
+		$queryArgs = array( 'post_type' => 'attachment', 'numberposts' => -1, 'post_status' => 'inherit', 'post_parent' => $this->ID );
+		return self::fetchAll($queryArgs);
 
 	}
 
@@ -717,8 +717,8 @@ class ooPost
 					'editor',
 				)
 			);
-			$args     = static::getRegistrationArgs($defaults);
-			$var      = register_post_type($postType, $args);
+			$registrationArgs     = static::getRegistrationArgs($defaults);
+			$var      = register_post_type($postType, $registrationArgs);
 		}
 		$class = get_called_class();
 		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns'));
@@ -836,10 +836,10 @@ class ooPost
 
 	/**
 	 * @static
-	 * @param array $args - accepts a wp_query $args array which overwrites the defaults
+	 * @param array $queryArgs - accepts a wp_query $queryArgs array which overwrites the defaults
 	 * @return WP_Query
 	 */
-	public static function fetchAll($args = array())
+	public static function fetchAll($queryArgs = array())
 	{
 		global $wp_post_types;
 
@@ -853,8 +853,8 @@ class ooPost
 			$defaults['orderby'] = 'menu_order';
 			$defaults['order'] = 'asc';
 		}
-		$args     = wp_parse_args($args, $defaults);
-		$query    = new ooWP_Query($args);
+		$queryArgs     = wp_parse_args($queryArgs, $defaults);
+		$query    = new ooWP_Query($queryArgs);
 
 		if ($query->query_vars['error']) {
 			die('Query error ' . $query->query_vars['error']);
@@ -870,33 +870,33 @@ class ooPost
 	/**
 	 * @deprecated
 	 */
-	static function fetchAllQuery($args = array())
+	static function fetchAllQuery($queryArgs = array())
 	{
-		return static::fetchAll($args);
+		return static::fetchAll($queryArgs);
 	}
 
 	/**
 
 	 * Return the first post matching the arguments
 	 * @static
-	 * @param $args
+	 * @param $queryArgs
 	 * @return null|ooPost
 	 */
-	static function fetchOne($args)
+	static function fetchOne($queryArgs)
 	{
-		$query = static::fetchAll($args);
+		$query = static::fetchAll($queryArgs);
 		return $query->posts ? $query->post : null;
 	}
 
 	/**
 	 * @static Returns the roots of this post type (i.e those whose post_parent is self::postTypeParentId)
-	 * @param array $args
+	 * @param array $queryArgs
 	 * @return ooWP_Query
 	 */
-	static function fetchRoots($args = array())
+	static function fetchRoots($queryArgs = array())
 	{
-		$args['post_parent'] = self::postTypeParentId();
-		return static::fetchAll($args);
+		$queryArgs['post_parent'] = self::postTypeParentId();
+		return static::fetchAll($queryArgs);
 	}
 
 
@@ -911,12 +911,12 @@ class ooPost
 	/**
 	 * Create a fake instance of a post.
 	 * @static
-	 * @param $args
+	 * @param $postArray
 	 * @return ooPost
 	 */
-	public static function makeFake($args) {
+	public static function makeFake($postArray) {
 		//set defaults
-		$args = wp_parse_args($args, array(
+		$postArray = wp_parse_args($postArray, array(
 			'ID' => 0,
 			'post_parent' => 0,
 			'post_title' => '',
@@ -928,17 +928,14 @@ class ooPost
 		));
 
 		//slugify title
-		if ($args['post_title'] && !$args['post_name']) {
-			$args['post_name'] = sanitize_title_with_dashes($args['post_title']);
+		if ($postArray['post_title'] && !$postArray['post_name']) {
+			$postArray['post_name'] = sanitize_title_with_dashes($postArray['post_title']);
 		}
 
-		return new static($args);
+		return new static($postArray);
 	}
 
 #endregion
 
 
 }
-
-
-?>
