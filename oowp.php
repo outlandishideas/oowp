@@ -31,7 +31,6 @@ function _oowp_init()
 {
 	$dirs = array(
 		dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes',
-//		dirname(__FILE__) . '/../../themes',
 		get_stylesheet_directory() . DIRECTORY_SEPARATOR . 'classes'
 	);
 	foreach ($dirs as $dir) {
@@ -90,7 +89,7 @@ function oowp_add_admin_styles() {
 		$handle = opendir($imagesDir);
 		while (false !== ($file = readdir($handle))) {
 			$fullFile = $imagesDir . DIRECTORY_SEPARATOR . $file;
-			if (!filesize($fullFile)) continue;
+			if (is_dir($fullFile) || !filesize($fullFile)) continue;
 
 			$imageSize = @getimagesize($fullFile);
 			if (!$imageSize || !$imageSize[0] || !$imageSize[1]) continue;
@@ -150,12 +149,12 @@ function oowp_initialiseClasses($dir)
 		if (is_dir($fullFile) && !in_array($file, array('.', '..'))) {
 			oowp_initialiseClasses($fullFile);
 		} else if (preg_match("/(\w+)\.class\.php/", $file, $matches)) {
-			oofp('requiring ' . $file);
 			require_once($fullFile);
 			$className = $matches[1];
 			if (class_exists($className)) {
 				$_knownOowpClasses[] = $className;
-				if (method_exists($className, 'init')) {
+				//init class if is is an ooPost. Note at of PHP 5.3.9 is_a() doesn't work as expected.
+				if ($className == 'ooPost' || is_subclass_of($className, 'ooPost')) {
 					$className::init();
 				}
 			}
