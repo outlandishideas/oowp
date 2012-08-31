@@ -55,13 +55,11 @@ class ooPost
 	 */
 	public final static function bruv()
 	{
-		static::postRegistration();
 	}
 
 	/**
 	 * @static
 	 * Called after all oowp classes have been registered
-	 * @deprecated
 	 */
 	public static function postRegistration() { /* do nothing by default */ }
 
@@ -185,15 +183,41 @@ class ooPost
 		return static::friendlyName() . 's';
 	}
 
+	/**
+	 * Gets all terms associated with this post, indexed by their taxonomy.
+	 * @param null $taxonomies - restrict to only one or more taxonomies
+	 * @param bool $includeEmpty - return empty
+	 * @return array - term objects
+	 */
+	public function terms($taxonomies = null, $includeEmpty = false)
+	{
+		if (!$taxonomies) {
+			$taxonomies = ooTaxonomy::fetchAllNames();
+		} else if (!is_array($taxonomies)) {
+			$taxonomies = array($taxonomies);
+		}
+		$terms = array();
+		foreach ($taxonomies as $taxonomy) {
+			$currentTerms = wp_get_post_terms($this->ID, $taxonomy);
+			if ($currentTerms || $includeEmpty) {
+				foreach ($currentTerms as $term) {
+					$terms[] = ooTerm::fetch($term);
+
+				}
+			}
+		}
+		return $terms;
+	}
+
 
 	/**
 	 * @param $targetPostType string e.g. post, event - the type of post you want to connect to
 	 * @param bool $single - just return the first/only post?
 	 * @param array $args - augment or overwrite the default parameters for the WP_Query
-	 * @param bool $includeDescendants - if this is true the the function will return any post that is connected to this post *or any of its descendants*
+	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
 	 * @return array
 	 */
-	protected function getConnected($targetPostType, $single = false, $args = array(), $includeDescendants = false)
+	protected function getConnected($targetPostType, $single = false, $args = array(), $hierarchical = false)
 	{
 		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
@@ -208,7 +232,8 @@ class ooPost
                 $connection_name[] = implode('_', $types);
             }
 
-			if ($includeDescendants) {
+			#todo optimisation: check to see if this post type is hierarchical first
+			if ($hierarchical) {
 				$connected_items = array_merge($this->getDescendantIds(), array($this->ID));
 			} else {
 				$connected_items = $this->ID;
@@ -223,7 +248,7 @@ class ooPost
 			$args   = array_merge($defaults, $args);
 			$result = self::fetchAll($args);
 
-			if ($includeDescendants) { //filter out any duplicate posts
+			if ($hierarchical) { //filter out any duplicate posts
 				$post_ids = array();
 				foreach($result->posts as $i => $post){
 					if(in_array($post->ID, $post_ids))
@@ -245,14 +270,6 @@ class ooPost
 		return $toReturn;
 	}
 
-	/**
-	 * helper for getDescendents
-	 * @static
-	 * @param ooPost $p  - the node to start walking from
-	 * @param array $current_descendants
-	 * @return array
-	 *
-	 */
 	static function walkTree($p, &$current_descendants = array())
 	{
 		$current_descendants = array_merge($p->children, $current_descendants);
@@ -261,6 +278,7 @@ class ooPost
 		}
 
 		return $current_descendants;
+
 	}
 
 	function getDescendants()
@@ -272,7 +290,7 @@ class ooPost
 			$keyed[$post->ID]->children = array();
 		}
 		unset($posts);
-		foreach ($keyed as $post) {
+		foreach ($keyed as $post) { /* This is all a bit complicated but it works */
 			if ($post->post_parent)
 				$keyed[$post->post_parent]->children[] = $post;
 		}
@@ -291,73 +309,8 @@ class ooPost
 		return $ids;
 	}
 
-
-	public final function getParent() {
-		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
-		return $this->getCacheValue() ? : $this->setCacheValue(
-			!empty($parentId) ? ooPost::fetch($parentId) : null
-		);
-	}
-
 	/**
-	 * @static
-	 * @return int returns the root parent type for posts.
-	 * If parent of a hierarchical post type is a page, for example, this needs to be set to that ID
-	 */
-	public static function postTypeParentId() {
-		return 0;
-	}
-
-	/**
-	 * Traverses up the getParent() hierarchy until finding one with no parent, which is returned
-	 */
-	public function getRoot() {
-		$parent = $this->getParent();
-		if ($parent) {
-			return $parent->getRoot();
-		}
-		return $this;
-	}
-
-	/**
-	 * Fetches all posts (of any post_type) whose post_parent is this post, as well as
-	 * the root posts of any post_types whose declared postTypeParentId is this post
-	 * @param array $args
-	 * @return ooPost[]
-	 */
-	public function children($args = array()) {
-		$args = wp_parse_args($args, array('post_parent' => $this->ID));
-		return static::fetchAll($args);
-	}
-
-	/**
-	 * Fetch roots of other post types for which this post is their parent
-	 * @param array $args
-	 * @return array
-	 */
-	public function fosterChildren($args = array()) {
-		$posts = array();
-		foreach ($this->childPostClassNames() as $className) {
-			$posts = array_merge($posts, $className::fetchRoots($args)->posts);
-		}
-		return $posts;
-	}
-
-	/**
-	 * @return array Class names of ooPost types having this object as their parent
-	 */
-	public function childPostClassNames() {
-		global $_registeredPostClasses;
-		$names = array();
-		foreach ($_registeredPostClasses as $class) {
-			if ($class::postTypeParentId() == $this->ID) $names[] = $class;
-		}
-		return $names;
-	}
-
-
-	/**
-	 * Gets the metadata (ACF custom fields or standard additional metadata) for the post
+	 * Gets the metadata (custom fields) for the post
 	 * @param $name
 	 * @param bool $single
 	 * @return array
@@ -395,56 +348,42 @@ class ooPost
 		//		return apply_filters('the_date', $this->post_date);
 	}
 
+	public function getParent() {
+		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
+		//stupid git. ignore this.
+		return $this->getCacheValue() ?: $this->setCacheValue(
+			!empty($parentId) ? ooPost::fetch($parentId) : null
+		);
+	}
+
+	/**
+	 * @static
+	 * @return int returns the root parent type for posts.
+	 * If parent of a hierchical post type is a page, for example, this needs to be set to that ID
+	 */
+	public static function postTypeParentId(){
+		return 0;
+	}
+
+	/**
+	 * Traverses up the getParent() hierarchy until finding one with no parent, which is returned
+	 */
+	public function getRoot() {
+		$parent = $this->getParent();
+		if ($parent) {
+			return $parent->getRoot();
+		}
+		return $this;
+	}
 
 	public function timestamp()
 	{
 		return strtotime($this->post_date);
 	}
 
-	/**
-	 * Splits the_excerpt by <!more> tag and discards the bit after more if it exists
-	 * Builds up as many sentences as possible before reaching the chars limit
-	 * If the first sentence is longer than chars it builds up whole words up to the limit
-	 * Adds ellipses if it truncates the excerpt and the last character of the excerpt isn't punctuation
-	 * @param int $chars
-	 * @return string
-	 */
-	function excerpt($chars = 400) {
-		$content = str_replace("<!--more-->", '<span id="more-1"></span>', $this->content());
-		//try to split on more link
-		$parts = preg_split('|<span id="more-\d+"></span>|i', $content);
-		$content = $parts[0];
-		$content = strip_tags($content);
-		$excerpt = '';
-		$sentences = array_filter(explode(" ", $content));
-		if ($sentences) {
-			foreach ($sentences as $sentence) {
-				if ((strlen($excerpt) + strlen($sentence)) < $chars && $sentence) {
-					$excerpt .= $sentence . " ";
-				} else {
-					break;
-				}
-			}
-		}
-
-		if (!$excerpt) {
-			$words = array_filter(explode(" ", $content));
-			if ($words) {
-				foreach ($words as $word) {
-					if ((strlen($excerpt) + strlen($word)) < $chars && $word) {
-						$excerpt .= $word . " ";
-					} else {
-						break;
-					}
-				}
-			}
-		}
-
-		$excerpt = trim(str_replace('&nbsp;', ' ', $excerpt));
-		if (preg_match('%\w|,|:|%i', substr($excerpt, -1)))
-			$excerpt = $excerpt . "...";
-
-		return ("<p>$excerpt</p>");
+	public function excerpt()
+	{
+		return $this->callGlobalPost('get_the_excerpt');
 	}
 
 	public function permalink()
@@ -452,8 +391,36 @@ class ooPost
 		return get_permalink($this);
 	}
 
-	public function author() {
-		return $this->callGlobalPost('get_the_author');
+	/**
+	 * Fetches all posts (of any post_type) whose post_parent is this post, as well as
+	 * the root posts of any post_types whose declared postTypeParentId is this post
+	 * @param array $args
+	 * @return ooPost[]
+	 */
+	public function children($args = array())
+	{
+		$posts = array();
+		foreach($this->childPostClassNames() as $className){
+			$posts = array_merge($posts, $className::fetchRoots()->posts);
+		}
+        $defaults = array('post_parent' => $this->ID);
+        $args = wp_parse_args($args, $defaults);
+		$children = static::fetchAll($args);
+		$children->posts = array_merge($children->posts, $posts);
+		return $children;
+	}
+
+	/**
+	 * @return array Class names of ooPost types having this object as their parent
+	 */
+	public function childPostClassNames()
+	{
+		global $_registeredPostClasses;
+		$names = array();
+		foreach ($_registeredPostClasses as $class) {
+			if ($class::postTypeParentId() == $this->ID) $names[] = $class;
+		}
+		return $names;
 	}
 
 	/**
@@ -473,16 +440,20 @@ class ooPost
 		return $returnVal;
 	}
 
-
+	public function author()
+	{
+		return $this->callGlobalPost('get_the_author');
+	}
 
 
 #endregion
 
 #region HTML Template helpers
 
-	public function htmlLink()
+	public function htmlLink($attrs = array())
 	{
-		return "<a href='" . $this->permalink() . "'>" . $this->title() . "</a>";
+		$attrString = $this::getAttributeString($attrs);
+		return "<a href='" . $this->permalink() . "' $attrString>" . $this->title() . "</a>";
 	}
 
 	protected static function htmlList($items)
@@ -506,33 +477,32 @@ class ooPost
 			$posts = static::fetchAll($args);
 		}
         //print_r ($posts);
-		$args['max_depth'] = isset($args['max_depth']) ? $args['max_depth'] : 0;
-		$args['current_depth'] = isset($args['current_depth']) ? $args['current_depth'] : 0;
 		foreach($posts as $post){
-			$post->printPartial('menuitem', $args);
+			$post->printMenuItem($args);
 		}
 	}
 
-	/**
-	 * @deprecated
-	 */
+	// functions for printing with each of the provided partial files
 	public function printSidebar() { $this->printPartial('sidebar'); }
-
-	/**
-	 * @deprecated
-	 */
 	public function printMain() { $this->printPartial('main'); }
-
-	/**
-	 * @deprecated
-	 */
 	public function printItem() { $this->printPartial('item'); }
+	public function printMenuItem($args = array()) {
+		$args['max_depth'] = isset($args['max_depth'])? $args['max_depth'] : 0;
+		$args['current_depth'] = isset($args['current_depth'])? $args['current_depth'] : 0;
+		$this->printPartial('menuitem', $args);
+	}
 
 	/**
-	 * @deprecated
+	 * @static turns and array of key=>value attibutes into html string
+	 * @param $attrs  key=>value attibutes
+	 * @return string html for including in an element
 	 */
-	public function printMenuItem($args = array()) {
-		$this->printPartial('menuitem', $args);
+	public static function getAttributeString($attrs){
+		$attributeString = '';
+		foreach($attrs as $key => $value){
+			$attributeString .= " $key='$value' ";
+		}
+		return $attributeString;
 	}
 
 	/**
@@ -623,7 +593,10 @@ class ooPost
 		$this->getPartial($partialType);
 	}
 
-
+	function htmlAuthorLink()
+	{
+		return $this->callGlobalPost('get_the_author_link');
+	}
 
 	/**
 	 * @return bool true if this is an ancestor of the page currently being viewed
@@ -734,7 +707,6 @@ class ooPost
 				'labels'      => oowp_generate_labels(static::friendlyName(), static::friendlyNamePlural()),
 				'public'      => true,
 				'has_archive' => true,
-				'hierarchical' => true,
 				'rewrite'     => array('slug'      => $postType,
 									   'with_front'=> false),
 				'show_ui'     => true,
@@ -743,7 +715,6 @@ class ooPost
 					'editor',
 				)
 			);
-
 			$args     = static::getRegistrationArgs($defaults);
 			$var      = register_post_type($postType, $args);
 		}
