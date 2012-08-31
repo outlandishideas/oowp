@@ -11,7 +11,7 @@
 		<ul class='children'>
 			<?php
 			foreach($post->children() as $child){
-				$child->printMenuItem($args);
+				$child->printPartial('menuitem', $args);
 			}
 			?>
 		</ul>

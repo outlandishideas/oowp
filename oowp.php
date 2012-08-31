@@ -41,7 +41,7 @@ function _oowp_init()
 	// call postRegistration on all registered post types, for e.g. creating p2p connections
 	global $_registeredPostClasses;
 	foreach ($_registeredPostClasses as $class) {
-		$class::postRegistration();
+		$class::bruv();
 	}
 
 	// set up a singleton for the theme
