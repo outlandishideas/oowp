@@ -1,5 +1,5 @@
 <?php
-require_once('ooQuery.class.php');
+require_once('ooWP_Query.class.php');
 
 /**
  * This class is a placeholder for all functions which are shared across all post types, and across all sites.
@@ -505,7 +505,6 @@ class ooPost
 		}else{
 			$posts = static::fetchAll($args);
 		}
-        //print_r ($posts);
 		$args['max_depth'] = isset($args['max_depth']) ? $args['max_depth'] : 0;
 		$args['current_depth'] = isset($args['current_depth']) ? $args['current_depth'] : 0;
 		foreach($posts as $post){
@@ -864,7 +863,7 @@ class ooPost
 	/**
 	 * @static
 	 * @param array $args - accepts a wp_query $args array which overwrites the defaults
-	 * @return \WP_Query
+	 * @return WP_Query
 	 */
 	public static function fetchAll($args = array())
 	{
@@ -918,7 +917,7 @@ class ooPost
 	/**
 	 * @static Returns the roots of this post type (i.e those whose post_parent is self::postTypeParentId)
 	 * @param array $args
-	 * @return array
+	 * @return ooWP_Query
 	 */
 	static function fetchRoots($args = array())
 	{
@@ -927,7 +926,10 @@ class ooPost
 	}
 
 
-
+	/**
+	 * @static
+	 * @return bool Whether or not the post type is declared as hierarchical
+	 */
 	static function isHierarchical() {
 		return is_post_type_hierarchical(static::postType());
 	}

@@ -2,6 +2,11 @@
 class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Countable
 {
 
+	/**
+	 * @var ooPost[]
+	 */
+	var $posts;
+
 	/* Interfaces */
 
 	public function getIterator() {
