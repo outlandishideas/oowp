@@ -228,15 +228,15 @@ class ooPost
 		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
 			$postType = $this::postType();
-            if(!is_array($targetPostType)) {
-                $targetPostType = array($targetPostType);
-            }
-            $connection_name = array();
-            foreach ($targetPostType as $targetType) {
-                $types = array($targetType, $postType);
-                sort($types);
-                $connection_name[] = implode('_', $types);
-            }
+			if(!is_array($targetPostType)) {
+				$targetPostType = array($targetPostType);
+			}
+			$connection_name = array();
+			foreach ($targetPostType as $targetType) {
+				$types = array($targetType, $postType);
+				sort($types);
+				$connection_name[] = implode('_', $types);
+			}
 
 			#todo optimisation: check to see if this post type is hierarchical first
 			if ($hierarchical) {
@@ -265,7 +265,7 @@ class ooPost
 
 			}
 
-            $toReturn = $single ? null : $result;
+			$toReturn = $single ? null : $result;
 			if (!$single) {
 				$toReturn = $result;
 			} else if ($result && $result->posts) {
@@ -409,8 +409,8 @@ class ooPost
 		foreach($this->childPostClassNames() as $className){
 			$posts = array_merge($posts, $className::fetchRoots()->posts);
 		}
-        $defaults = array('post_parent' => $this->ID);
-        $queryArgs = wp_parse_args($queryArgs, $defaults);
+		$defaults = array('post_parent' => $this->ID);
+		$queryArgs = wp_parse_args($queryArgs, $defaults);
 		$children = static::fetchAll($queryArgs);
 		$children->posts = array_merge($children->posts, $posts);
 		return $children;
@@ -598,12 +598,12 @@ class ooPost
 		} else {
 			// show an error message
 			?>
-			<div class="oowp-error">
-				<span class="oowp-post-type"><?php echo $this->postType(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
-				<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
-				<!-- <?php print_r($paths); ?> -->
-			</div>
-			<?php
+		<div class="oowp-error">
+			<span class="oowp-post-type"><?php echo $this->postType(); ?></span>: <span class="oowp-post-id"><?php echo $this->ID; ?></span>
+			<div class="oowp-error-message">Partial '<?php echo $partialType; ?>' not found</div>
+			<!-- <?php print_r($paths); ?> -->
+		</div>
+		<?php
 //  		throw new Exception(sprintf("Partial $partialType not found", $paths, get_class($this)));
 		}
 	}
@@ -738,7 +738,7 @@ class ooPost
 				'public'      => true,
 				'has_archive' => true,
 				'rewrite'     => array('slug'      => $postType,
-									   'with_front'=> false),
+					'with_front'=> false),
 				'show_ui'     => true,
 				'supports'    => array(
 					'title',
@@ -749,7 +749,7 @@ class ooPost
 			$var      = register_post_type($postType, $registrationArgs);
 		}
 		$class = get_called_class();
-		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns'));
+		add_filter("manage_edit-{$postType}_columns", array($class, 'addCustomAdminColumns_internal'));
 		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
 		global $_registeredPostClasses;
@@ -779,13 +779,15 @@ class ooPost
 	}
 
 	/**
+	 * This wraps the given array in a helper object, and calls addCustomAdminColumns with it
 	 * @static
-	 * Use this in combination with printCustomAdminColumn to add custom columns to the wp admin interface for the post
 	 * @param $defaults
-	 * @return mixed
+	 * @return array
 	 */
-	static function addCustomAdminColumns($defaults) {
-		return $defaults;
+	static final function addCustomAdminColumns_internal($defaults) {
+		$helper = new ArrayHelper($defaults);
+		static::addCustomAdminColumns($helper);
+		return $helper->array;
 	}
 
 	/**
@@ -800,12 +802,20 @@ class ooPost
 
 	/**
 	 * @static
+	 * Use this in combination with printCustomAdminColumn to add custom columns to the wp admin interface for the post.
+	 * Argument should end up with an array of [column name]=>[column header]
+	 * Ordering is respected, so use the helper functions insertBefore and insertAfter
+	 * @param $helper ArrayHelper Contains the default columns
+	 */
+	static function addCustomAdminColumns(ArrayHelper $helper) { /* do nothing */ }
+
+	/**
+	 * @static
 	 * Use this in combination with addCustomAdminColumns to render the column value for a post
 	 * @param $column string The name of the column, as given in addCustomAdminColumns
 	 * @param $post ooPost The post (subclass) object
 	 */
-	static function printCustomAdminColumn($column, $post) {
-	}
+	static function printCustomAdminColumn($column, $post) { /* do nothing */ }
 
 	/**
 	 * @static
@@ -977,3 +987,21 @@ class ooPost
 
 
 }
+
+
+class ArrayHelper {
+	public $array = array();
+
+	function __construct($array = array()) {
+		$this->array = $array;
+	}
+
+	function insertBefore($beforeKey, $key, $value) {
+		$this->array = array_insert_before($this->array, $beforeKey, $key, $value);
+	}
+
+	function insertAfter($afterKey, $key, $value) {
+		$this->array = array_insert_after($this->array, $afterKey, $key, $value);
+	}
+}
+?>
