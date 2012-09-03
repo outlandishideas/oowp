@@ -53,7 +53,7 @@ class ooPost
 	 * @static
 	 * Should be run with the wordpress init hook
 	 */
-	public final static function bruv()
+	public static function bruv()
 	{
 	}
 
@@ -209,15 +209,21 @@ class ooPost
 		return $terms;
 	}
 
+	/**
+	 * @deprecated Alias of connected
+	 */
+	protected function getConnected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false){
+		return $this->connected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false);
+	}
 
 	/**
 	 * @param $targetPostType string e.g. post, event - the type of post you want to connect to
 	 * @param bool $single - just return the first/only post?
-	 * @param array $args - augment or overwrite the default parameters for the WP_Query
+	 * @param array $queryArgs - augment or overwrite the default parameters for the WP_Query
 	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
 	 * @return array
 	 */
-	protected function getConnected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false)
+	public function connected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false)
 	{
 		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
@@ -419,6 +425,28 @@ class ooPost
 		$names = array();
 		foreach ($_registeredPostClasses as $class) {
 			if ($class::postTypeParentId() == $this->ID) $names[] = $class;
+		}
+		return $names;
+	}
+
+	/**
+	 * @return array Post types of ooPost types that are connected to this post type
+	 */
+	public static function connectedPostTypes()
+	{
+		global $_registeredConnections;
+		return isset($_registeredConnections[self::postType()]) ? $_registeredConnections[self::postType()] : array();
+	}
+
+	/**
+	 * @return array ClassNames of ooPost types that are connected to this post type
+	 */
+	public static function connectedClassNames()
+	{
+		global $_registeredConnections;
+		$names = array();
+		foreach(self::connectedPostTypes() as $post_type){
+			$names[] = ooGetClassName($post_type);
 		}
 		return $names;
 	}
@@ -725,7 +753,9 @@ class ooPost
 		add_action("manage_{$postType}_posts_custom_column", array($class, 'printCustomAdminColumn_internal'), 10, 2);
 		add_action('right_now_content_table_end', array($class, 'addRightNowCount'));
 		global $_registeredPostClasses;
+		global $_registeredConnections;
 		$_registeredPostClasses[$postType] = $class;
+		$_registeredConnections[$postType] = array();
 		return $var;
 	}
 
@@ -800,10 +830,18 @@ class ooPost
 	 */
 	static function registerConnection($targetPostType, $parameters = array())
 	{
+		global $_registeredConnections;
 		if (!function_exists('p2p_register_connection_type'))
 			return;
 		$postType = (string)self::postType();
 		$types    = array($targetPostType, $postType);
+
+		//register this connection globally so that we can find out about it later
+		if(!$_registeredConnections[$postType]) $_registeredConnections[$postType] = array();
+		if(!$_registeredConnections[$targetPostType]) $_registeredConnections[$targetPostType] = array();
+		$_registeredConnections[$targetPostType][] = $postType;
+		$_registeredConnections[$postType][] = $targetPostType;
+
 		sort($types);
 		$connection_name = implode('_', $types);
 		$defaults        = array(

@@ -21,6 +21,7 @@ function create_oo_posts($has_posts, $query)
 }
 
 $_registeredPostClasses = array();
+$_registeredConnections = array();
 $_knownOowpClasses = array();
 $_oowpTheme = null;
 
