@@ -226,8 +226,8 @@ class ooPost
 		return $this->connected($targetPostType, $single, $queryArgs, $hierarchical);
 	}
 
-	protected function getConnectionName($targetType) {
-		$types = array($targetType, $this::postType());
+	protected static function getConnectionName($targetType) {
+		$types = array($targetType, self::postType());
 		sort($types);
 		return implode('_', $types);
 	}
@@ -241,7 +241,7 @@ class ooPost
 	public function connect($post) {
 		$post = ooPost::fetch($post);
 		if ($post) {
-			$connectionName = $this->getConnectionName($post->post_type);
+			$connectionName = self::getConnectionName($post->post_type);
 			/** @var P2P_Connection_Type $connectionType */
 			$connectionType = p2p_type($connectionName);
 			if ($connectionType) {
@@ -266,7 +266,7 @@ class ooPost
 			}
 			$connection_name = array();
 			foreach ($targetPostType as $targetType) {
-				$connection_name[] = $this->getConnectionName($targetType);
+				$connection_name[] = self::getConnectionName($targetType);
 			}
 
 			#todo optimisation: check to see if this post type is hierarchical first
@@ -884,28 +884,27 @@ class ooPost
 	 */
 	static function registerConnection($targetPostType, $parameters = array())
 	{
-		global $_registeredConnections;
 		if (!function_exists('p2p_register_connection_type'))
 			return;
 		$postType = (string)self::postType();
-		$types    = array($targetPostType, $postType);
 
 		//register this connection globally so that we can find out about it later
+		global $_registeredConnections;
 		if(!$_registeredConnections[$postType]) $_registeredConnections[$postType] = array();
 		if(!$_registeredConnections[$targetPostType]) $_registeredConnections[$targetPostType] = array();
 		$_registeredConnections[$targetPostType][] = $postType;
 		$_registeredConnections[$postType][] = $targetPostType;
 
-		sort($types);
-		$connection_name = implode('_', $types);
+		$connection_name = self::getConnectionName($targetPostType);
 		$defaults        = array(
 			'name'        => $connection_name,
-			'from'        => $types[0],
-			'to'          => $types[1],
+			'from'        => $postType,
+			'to'          => $targetPostType,
 			'cardinality' => 'many-to-many',
 			'reciprocal'  => true
 		);
-		$parameters      = wp_parse_args($parameters, $defaults);
+
+		$parameters = wp_parse_args($parameters, $defaults);
 		p2p_register_connection_type($parameters);
 	}
 
