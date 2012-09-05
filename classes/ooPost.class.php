@@ -26,6 +26,12 @@ class ooPost
 		}
 	}
 
+	/**
+	 * Converts the data into a wordpress post object
+	 * @static
+	 * @param $data
+	 * @return object|ooPost
+	 */
 	public static function getPostObject($data)
 	{
 		if (is_array($data)) {
@@ -63,6 +69,7 @@ class ooPost
 	/**
 	 * @static
 	 * Called after all oowp classes have been registered
+	 * @deprecated Replaced by bruv()
 	 */
 	public static function postRegistration() { /* do nothing by default */ }
 
@@ -215,8 +222,32 @@ class ooPost
 	/**
 	 * @deprecated Alias of connected
 	 */
-	protected function getConnected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false){
-		return $this->connected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false);
+	public function getConnected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false){
+		return $this->connected($targetPostType, $single, $queryArgs, $hierarchical);
+	}
+
+	protected function getConnectionName($targetType) {
+		$types = array($targetType, $this::postType());
+		sort($types);
+		return implode('_', $types);
+	}
+
+	public function connectAll($posts) {
+		foreach ($posts as $post) {
+			$this->connect($post);
+		}
+	}
+
+	public function connect($post) {
+		$post = ooPost::fetch($post);
+		if ($post) {
+			$connectionName = $this->getConnectionName($post->post_type);
+			/** @var P2P_Connection_Type $connectionType */
+			$connectionType = p2p_type($connectionName);
+			if ($connectionType) {
+				$connectionType->connect($this->ID, $post->ID);
+			}
+		}
 	}
 
 	/**
@@ -230,15 +261,12 @@ class ooPost
 	{
 		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
-			$postType = $this::postType();
 			if(!is_array($targetPostType)) {
 				$targetPostType = array($targetPostType);
 			}
 			$connection_name = array();
 			foreach ($targetPostType as $targetType) {
-				$types = array($targetType, $postType);
-				sort($types);
-				$connection_name[] = implode('_', $types);
+				$connection_name[] = $this->getConnectionName($targetType);
 			}
 
 			#todo optimisation: check to see if this post type is hierarchical first
@@ -449,7 +477,6 @@ class ooPost
 	 */
 	public static function connectedClassNames()
 	{
-		global $_registeredConnections;
 		$names = array();
 		foreach(self::connectedPostTypes() as $post_type){
 			$names[] = ooGetClassName($post_type);
