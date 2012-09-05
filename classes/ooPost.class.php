@@ -32,7 +32,7 @@ class ooPost
 			return (object)$data;
 		} else if (is_object($data)) {
 			return $data;
-		} else if (is_integer($data)) {
+		} else if (is_numeric($data) && is_integer($data+0)) {
 			return get_post($data);
 		} else {
 			global $post;
@@ -44,9 +44,12 @@ class ooPost
 	 * @static
 	 * Should be run with the wordpress init hook
 	 */
-	public final static function init()
+	public static function init()
 	{
-		static::register();
+		$class = new ReflectionClass(get_called_class());
+		if (!$class->isAbstract()) {
+			static::register();
+		}
 	}
 
 	/**
@@ -672,19 +675,17 @@ class ooPost
 		return wp_get_attachment_image($this->featuredImageAttachmentId(), $size, 0, $attrs);
 	}
 
+	/**
+	 * Gets the list of elements that comprise a breadcrumb trail
+	 */
 	function breadcrumbs(){
-		$delimiter = '&raquo;';
 		$ancestors = array($this->title());
 		$current = $this;
 		while($parent = $current->getParent()){
 			$ancestors[] = $parent->htmlLink();
 			$current = $parent;
 		}
-		if($this->ID != HOME_PAGE_ID){
-			$ancestors[] = ooPost::fetch(HOME_PAGE_ID)->htmlLink();
-		}
-		array_reverse($ancestors);
-		print implode(" $delimiter ", array_reverse($ancestors));
+		return array_reverse($ancestors);
 	}
 
 	public function attachments(){
@@ -874,10 +875,11 @@ class ooPost
 	{
 		// construct an appropriate ooPost (subclass) instance, depending on the post_type of the post
 		if ($data) {
-			$data      = self::getPostObject($data);
-			$className = ooGetClassName($data->post_type, 'ooPost');
-
-			return new $className($data);
+			$data = self::getPostObject($data);
+			if ($data) {
+				$className = ooGetClassName($data->post_type, 'ooPost');
+				return new $className($data);
+			}
 		}
 		return null;
 	}
