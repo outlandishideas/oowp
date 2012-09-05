@@ -1,6 +1,14 @@
 <?php
 
 abstract class ooWvcPost extends ooPost {
+	public function permalink() {
+		$homepage = Application::getInstance()->homepage();
+		if ($homepage && $homepage->ID == $this->ID) {
+			return get_bloginfo('url');
+		}
+		return parent::permalink();
+	}
+
 
 //	public function permalink()
 //	{
