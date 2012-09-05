@@ -2,7 +2,7 @@
 
 abstract class ooWvcPost extends ooPost {
 	public function permalink() {
-		$homepage = Application::getInstance()->homepage();
+		$homepage = self::fetchHomepage();
 		if ($homepage && $homepage->ID == $this->ID) {
 			return get_bloginfo('url');
 		}
@@ -14,7 +14,7 @@ abstract class ooWvcPost extends ooPost {
 //	{
 //		$parent = $this->getParent();
 //		$parentUrl = $parent ? $parent->permalink() : get_bloginfo('url').'/';
-//		$homepage = Application::getInstance()->homepage();
+//		$homepage = self::fetchHomepage();
 //		$postName = ($this->ID == $homepage->ID) ? '' : $this->post_name . '/';
 //		return $parentUrl.$postName;
 //	}
@@ -25,7 +25,7 @@ abstract class ooWvcPost extends ooPost {
 	 */
 	function breadcrumbs() {
 		$ancestors = parent::breadcrumbs();
-		$home = Application::getInstance()->homepage();
+		$home = self::fetchHomepage();
 		if ($home && $this->ID != $home->ID) {
 			array_unshift($ancestors, $home->htmlLink());
 		}

@@ -925,8 +925,12 @@ class ooPost
 		return static::fetchAll($queryArgs);
 	}
 
-	/**
+	static function fetchHomepage() {
+		$id = get_option('page_on_front');
+		return $id ? self::fetch($id) : null;
+	}
 
+	/**
 	 * Return the first post matching the arguments
 	 * @static
 	 * @param $queryArgs
