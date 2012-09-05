@@ -395,8 +395,11 @@ class ooPost
 		return $this->callGlobalPost('get_the_excerpt');
 	}
 
-	public function permalink()
-	{
+	public function permalink() {
+		$homepage = self::fetchHomepage();
+		if ($homepage && $homepage->ID == $this->ID) {
+			return get_bloginfo('url');
+		}
 		return get_permalink($this);
 	}
 
@@ -685,7 +688,20 @@ class ooPost
 			$ancestors[] = $parent->htmlLink();
 			$current = $parent;
 		}
+		$home = self::fetchHomepage();
+		if ($home && $this->ID != $home->ID) {
+			$ancestors[] = $home->htmlLink();
+		}
 		return array_reverse($ancestors);
+	}
+
+	/**
+	 * Prints the breadcrumb trail using the given delimiter
+	 * @param string $delimiter The text to separate the breadcrumb elements. Defaults to ' &raquo; ' ( » )
+	 * @return string
+	 */
+	function printBreadcrumbs($delimiter = ' &raquo; ') {
+		echo implode($delimiter, $this->breadcrumbs());
 	}
 
 	public function attachments(){
