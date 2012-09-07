@@ -981,6 +981,10 @@ class ooPost
 		return static::fetchAll($queryArgs);
 	}
 
+	/**
+	 * @static
+	 * @return null|ooPost
+	 */
 	static function fetchHomepage() {
 		$id = get_option('page_on_front');
 		return $id ? self::fetch($id) : null;
