@@ -931,7 +931,7 @@ class ooPost
 	public static function fetchBySlug($slug){
 		$args=array(
 			'name' => $slug,
-			'post_type' => self::postType(),
+			'post_type' => static::postType(),
 			'numberposts' => 1
 		);
 		$posts = get_posts($args);
