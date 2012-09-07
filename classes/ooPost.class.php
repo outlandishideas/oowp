@@ -232,12 +232,18 @@ class ooPost
 		return implode('_', $types);
 	}
 
+	/**
+	 * @param $posts array Array of posts/post ids
+	 */
 	public function connectAll($posts) {
 		foreach ($posts as $post) {
 			$this->connect($post);
 		}
 	}
 
+	/**
+	 * @param $post int|object|ooPost
+	 */
 	public function connect($post) {
 		$post = ooPost::fetch($post);
 		if ($post) {
@@ -350,7 +356,7 @@ class ooPost
 	 * Gets the metadata (custom fields) for the post
 	 * @param $name
 	 * @param bool $single
-	 * @return array
+	 * @return array|string
 	 */
 	public function getMetadata($name, $single = false) {
 		$meta = null;
