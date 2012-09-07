@@ -934,6 +934,18 @@ class ooPost
 		return null;
 	}
 
+	public static function fetchBySlug($slug){
+		$args=array(
+			'name' => $slug,
+			'post_type' => static::postType(),
+			'numberposts' => 1
+		);
+		$posts = get_posts($args);
+		if( $posts ) {
+			return  ooPost::fetch($posts[0]);
+		}
+	}
+
 	/**
 	 * @static
 	 * @param array $queryArgs - accepts a wp_query $queryArgs array which overwrites the defaults
