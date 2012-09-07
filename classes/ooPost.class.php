@@ -892,6 +892,8 @@ class ooPost
 		global $_registeredConnections;
 		if(!$_registeredConnections[$postType]) $_registeredConnections[$postType] = array();
 		if(!$_registeredConnections[$targetPostType]) $_registeredConnections[$targetPostType] = array();
+		if(in_array($targetPostType, $_registeredConnections[$postType]))
+			return; //this connection has already been registered
 		$_registeredConnections[$targetPostType][] = $postType;
 		$_registeredConnections[$postType][] = $targetPostType;
 
