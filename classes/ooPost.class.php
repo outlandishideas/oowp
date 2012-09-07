@@ -362,8 +362,7 @@ class ooPost
 		$meta = null;
 		if (function_exists('get_field')) {
 			$meta = get_field($name, $this->ID);
-		}
-		if (!$meta) {
+		} else {
 			$meta = get_post_meta($this->ID, $name, $single);
 		}
 		return $meta;
