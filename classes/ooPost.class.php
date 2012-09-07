@@ -199,7 +199,7 @@ class ooPost
 	 * @param bool $includeEmpty - return empty
 	 * @return array - term objects
 	 */
-	public function terms($taxonomies = null, $includeEmpty = false)
+/*	public function terms($taxonomies = null, $includeEmpty = false)
 	{
 		if (!$taxonomies) {
 			$taxonomies = ooTaxonomy::fetchAllNames();
@@ -217,7 +217,7 @@ class ooPost
 			}
 		}
 		return $terms;
-	}
+	}*/
 
 	/**
 	 * @deprecated Alias of connected
@@ -245,7 +245,7 @@ class ooPost
 	 * @param $post int|object|ooPost
 	 */
 	public function connect($post) {
-		$post = ooPost::fetch($post);
+		$post = ooPost::createPostObject($post);
 		if ($post) {
 			$connectionName = self::getConnectionName($post->post_type);
 			/** @var P2P_Connection_Type $connectionType */
@@ -395,7 +395,7 @@ class ooPost
 		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
 		//stupid git. ignore this.
 		return $this->getCacheValue() ?: $this->setCacheValue(
-			!empty($parentId) ? ooPost::fetch($parentId) : null
+			!empty($parentId) ? ooPost::fetchById($parentId) : null
 		);
 	}
 
@@ -847,7 +847,7 @@ class ooPost
 	 * @param $post_id
 	 */
 	static final function printCustomAdminColumn_internal($column, $post_id) {
-		static::printCustomAdminColumn($column, ooPost::fetch($post_id));
+		static::printCustomAdminColumn($column, ooPost::fetchById($post_id));
 	}
 
 	/**
@@ -877,7 +877,7 @@ class ooPost
 		if (!isset($ooQueriedObject)) {
 			global $wp_the_query;
 			$id = $wp_the_query->get_queried_object_id();
-			$ooQueriedObject = $id ? ooPost::fetch($id) : null;
+			$ooQueriedObject = $id ? ooPost::fetchById($id) : null;
 		}
 		return $ooQueriedObject;
 	}
@@ -920,30 +920,47 @@ class ooPost
 	 * @static factory class creates a post of the appropriate ooPost subclass, populated with the given data
 	 * @param null $data
 	 * @return ooPost - an ooPost object or subclass if it exists
+	 * @deprecated
 	 */
 	public static function fetch($data = null)
 	{
-		// construct an appropriate ooPost (subclass) instance, depending on the post_type of the post
+		return self::createPostObject($data);
+	}
+
+	/**
+	 * Factory method for creating a post of the appropriate ooPost subclass, for the given data
+	 * @static
+	 * @param object $data
+	 * @return ooPost|null
+	 */
+	public static function createPostObject($data = null) {
 		if ($data) {
-			$data = self::getPostObject($data);
-			if ($data) {
-				$className = ooGetClassName($data->post_type, 'ooPost');
-				return new $className($data);
+			$postData = self::getPostObject($data);
+			if ($postData) {
+				$className = ooGetClassName($postData->post_type, 'ooPost');
+				return new $className($postData);
 			}
 		}
 		return null;
 	}
 
+	/**
+	 * Factory method for creating a post of the appropriate ooPost subclass, for the given post ID
+	 * @static
+	 * @param int $id
+	 * @return ooPost|null
+	 */
+	public static function fetchById($id) {
+		$data = get_post($id);
+		return self::createPostObject($data);
+	}
+
 	public static function fetchBySlug($slug){
-		$args=array(
+		return ooPost::fetchOne(array(
 			'name' => $slug,
 			'post_type' => static::postType(),
 			'numberposts' => 1
-		);
-		$posts = get_posts($args);
-		if( $posts ) {
-			return  ooPost::fetch($posts[0]);
-		}
+		));
 	}
 
 	/**
@@ -973,7 +990,7 @@ class ooPost
 		}
 
 		foreach ($query->posts as $i => $post) {
-			$query->posts[$i] = static::fetch($post);
+			$query->posts[$i] = static::createPostObject($post);
 		}
 
 		return $query;
@@ -993,7 +1010,7 @@ class ooPost
 	 */
 	static function fetchHomepage() {
 		$id = get_option('page_on_front');
-		return $id ? self::fetch($id) : null;
+		return $id ? self::fetchById($id) : null;
 	}
 
 	/**

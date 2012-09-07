@@ -14,7 +14,7 @@ function create_oo_posts($has_posts, $query)
 {
 	if ($has_posts) {
 		foreach ($query->posts as $i => $post) {
-			$query->posts[$i] = ooPost::fetch($post);
+			$query->posts[$i] = ooPost::createPostObject($post);
 		}
 	}
 	return $query->posts;
