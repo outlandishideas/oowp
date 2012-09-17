@@ -999,7 +999,7 @@ class ooPost
 	/**
 	 * @static
 	 * @param array $queryArgs - accepts a wp_query $queryArgs array which overwrites the defaults
-	 * @return WP_Query
+	 * @return ooWP_Query
 	 */
 	public static function fetchAll($queryArgs = array())
 	{
