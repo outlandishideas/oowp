@@ -427,9 +427,43 @@ class ooPost
 		return strtotime($this->post_date);
 	}
 
-	public function excerpt()
-	{
-		return $this->callGlobalPost('get_the_excerpt');
+		function excerpt($chars = 400) {
+		$content = str_replace("<!--more-->", '<span id="more-1"></span>', $this->content());
+		//try to split on more link
+		$parts = preg_split('|<span id="more-\d+"></span>|i', $content);
+		$content = $parts[0];
+		$content = strip_tags($content);
+		$excerpt = '';
+		$excerpt = '';
+		$sentences = array_filter(explode(" ", $content));
+		if($sentences){
+			foreach($sentences as $sentence){
+				if((strlen($excerpt) + strlen($sentence)) < $chars && $sentence){
+					$excerpt .= $sentence." ";
+				}else{
+					break;
+				}
+			}
+		}
+
+		if(!$excerpt){
+			$words = array_filter(explode(" ", $content));
+			if($words){
+				foreach($words as $word){
+					if((strlen($excerpt) + strlen($word)) < $chars && $word){
+						$excerpt .= $word." ";
+					}else{
+						break;
+					}
+				}
+			}
+		}
+
+		$excerpt = trim(str_replace('&nbsp;', ' ',$excerpt));
+		if(preg_match('%\w|,|:%i', substr($excerpt, -1)))
+			$excerpt = $excerpt."...";
+
+		return ($excerpt);
 	}
 
 	public function permalink() {
@@ -969,7 +1003,7 @@ class ooPost
 	/**
 	 * @static
 	 * @param array $queryArgs - accepts a wp_query $queryArgs array which overwrites the defaults
-	 * @return WP_Query
+	 * @return ooWP_Query
 	 */
 	public static function fetchAll($queryArgs = array())
 	{
