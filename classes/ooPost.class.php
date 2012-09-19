@@ -352,6 +352,10 @@ class ooPost
 		return $ids;
 	}
 
+	public function allMetadata() {
+		return get_metadata('post', $this->ID);
+	}
+
 	/**
 	 * Gets the metadata (custom fields) for the post
 	 * @param $name
@@ -518,7 +522,7 @@ class ooPost
 
 	public function htmlLink($attrs = array())
 	{
-		$attrString = $this::getAttributeString($attrs);
+		$attrString = self::getAttributeString($attrs);
 		return "<a href='" . $this->permalink() . "' $attrString>" . $this->title() . "</a>";
 	}
 
