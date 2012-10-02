@@ -433,3 +433,29 @@ class OOWP_Layout {
 		return locate_template( $templates ) ?: $template;
 	}
 }
+
+
+
+
+function oowp_fetchAll_shortcode($params, $content) {
+	$postType = $params['type']; //what kind of post are we querying
+	unset($params['type']); //don't need this any more
+
+	global $_registeredPostClasses;
+	if(!array_key_exists($postType, $_registeredPostClasses)){
+		if(WP_DEBUG) die('OOWP shortcode error: unknown post-type ('.$postType.')');
+		else return;
+	}
+	//ok - we know it's a valid post type
+
+	$className = $_registeredPostClasses[$postType];
+
+	$query = $className::fetchAll($params);
+
+	if($query){
+		foreach($query as $post){
+			$post->printItem();
+		}
+	}
+}
+add_shortcode('listContent', 'oowp_fetchAll_shortcode');
