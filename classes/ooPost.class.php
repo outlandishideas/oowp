@@ -940,11 +940,14 @@ class ooPost
 		$_registeredConnections[$targetPostType][] = $postType;
 		$_registeredConnections[$postType][] = $targetPostType;
 
+		$types = array($targetPostType, self::postType());
+		sort($types);
+
 		$connection_name = self::getConnectionName($targetPostType);
 		$defaults        = array(
 			'name'        => $connection_name,
-			'from'        => $postType,
-			'to'          => $targetPostType,
+			'from'        => $types[0],
+			'to'          => $types[1],
 			'cardinality' => 'many-to-many',
 			'reciprocal'  => true
 		);
@@ -988,8 +991,16 @@ class ooPost
 	 * @return ooPost|null
 	 */
 	public static function fetchById($id) {
-		$data = get_post($id);
-		return self::createPostObject($data);
+		if(is_array($id)){
+			$ids = $id;
+			$posts = array();
+			foreach($ids as $id){
+				$posts[] = get_post($id);
+			}
+		}else{
+			$data = get_post($id);
+			return self::createPostObject($data);
+		}
 	}
 
 	public static function fetchBySlug($slug){

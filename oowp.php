@@ -435,8 +435,12 @@ class OOWP_Layout {
 }
 
 
-
-
+/**
+ * Shortcode that allows access to the basic  FetchAll functionality through the CMS
+ * Example: [listContent type='event' posts_per_page=3]
+ * @param $params
+ * @param $content
+ */
 function oowp_fetchAll_shortcode($params, $content) {
 	$postType = $params['type']; //what kind of post are we querying
 	unset($params['type']); //don't need this any more
