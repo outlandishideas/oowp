@@ -477,6 +477,7 @@ class ooPost
     /**
      * Fetches all posts (of any post_type) whose post_parent is this post, as well as
      * the root posts of any post_types whose declared postTypeParentId is this post
+     * add 'post_type' to query args to only return certain post types for children
      * @param array $queryArgs
      * @return ooPost[]
      */
