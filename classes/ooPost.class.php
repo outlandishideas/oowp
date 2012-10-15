@@ -635,6 +635,10 @@ class ooPost
         return $html;
     }
 
+    public function theme() {
+        return ooTheme::getInstance();
+    }
+
     /**
      * looks for $partialType-$post_type.php, then $partialType.php in the partials directory of
      * the theme, then the plugin
@@ -678,6 +682,7 @@ class ooPost
         $match = ($specific ? $specific[0] : ($nonspecific ? $nonspecific[0] : null));
         if ($match) {
             $post = $this;
+            $theme = $this->theme();
             if (WP_DEBUG) print "\n\n<!--start $match start-->\n";
             include($match);
             if (WP_DEBUG) print "\n<!--end $match end-->\n\n";

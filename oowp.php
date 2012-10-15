@@ -23,7 +23,6 @@ function create_oo_posts($has_posts, $query)
 $_registeredPostClasses = array();
 $_registeredConnections = array();
 $_knownOowpClasses = array();
-$_oowpTheme = null;
 
 // include all matching classes in ./classes and [current theme]/classes directories,
 // and register any subclasses of ooPost using their static register() function
@@ -46,7 +45,6 @@ function _oowp_init()
 
 	// set up a singleton for the theme
 	global $_knownOowpClasses;
-	global $_oowpTheme;
 	$themeClass = 'ooTheme';
 	foreach ($_knownOowpClasses as $class) {
 		if (is_subclass_of($class, 'ooTheme')) {
@@ -54,8 +52,8 @@ function _oowp_init()
 		}
 	}
 	if (class_exists($themeClass)) {
-		$_oowpTheme = new $themeClass();
-		$_oowpTheme->registerHooks();
+        $oowpTheme = $themeClass::getInstance();
+		$oowpTheme->init();
 	}
 
 	unregister_post_type('post');
