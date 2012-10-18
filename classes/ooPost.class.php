@@ -485,13 +485,12 @@ class ooPost
     {
         global $_registeredPostClasses;
         $posts = array();
-        $postTypes = (array_key_exists ('post_type', $queryArgs) ? $queryArgs['post_type'] : 'all');
+        $postTypes = (array_key_exists ('post_type', $queryArgs) ? $queryArgs['post_type'] : 'none');
         unset($queryArgs['post_type']);
         if (!is_array($postTypes)) $postTypes = array($postTypes);
         foreach($this->childPostClassNames() as $className){
-            #todo optimisation check that className is not excluded before calling this query
             foreach($postTypes as $postType){
-                if(($postType != 'all' && $_registeredPostClasses[$postType] == $className) || $postType == 'all'){
+                if($postType != 'none' && $_registeredPostClasses[$postType] == $className){
                     $posts = array_merge($posts, $className::fetchRoots($queryArgs)->posts);
                 }
             }
