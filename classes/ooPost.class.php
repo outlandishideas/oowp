@@ -427,8 +427,9 @@ class ooPost
         return strtotime($this->post_date);
     }
 
-    function excerpt($chars = 400) {
-        $content = str_replace("<!--more-->", '<span id="more-1"></span>', $this->content());
+    function excerpt($chars = 400, $stuff = null) {
+        (!empty($stuff) ?: $stuff = $this->content());
+        $content = str_replace("<!--more-->", '<span id="more-1"></span>', $stuff);
         //try to split on more link
         $parts = preg_split('|<span id="more-\d+"></span>|i', $content);
         $content = $parts[0];
@@ -478,6 +479,7 @@ class ooPost
      * Fetches all posts (of any post_type) whose post_parent is this post, as well as
      * the root posts of any post_types whose declared postTypeParentId is this post
      * add 'post_type' to query args to only return certain post types for children
+     * add 'post__not_in to query args to exclude certain pages based on id.
      * @param array $queryArgs
      * @return ooPost[]
      */
