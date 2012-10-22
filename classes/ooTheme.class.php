@@ -6,6 +6,7 @@
 class ooTheme {
 
 	protected $allHooks = array();
+    public $registeredPostClasses = array();
     private static $instance;
 
 
@@ -22,6 +23,7 @@ class ooTheme {
 			'action' => array(
 			)
 		);
+        $this->registeredPostClasses = $this->registeredPostClasses();
 	}
 
     /**
@@ -88,6 +90,11 @@ class ooTheme {
             add_image_size( 'category-thumb', 300, 9999 ); //300 pixels wide (and unlimited height)
             add_image_size( 'homepage-thumb', 220, 180, true ); //(cropped)
         }
+    }
+
+    private function registeredPostClasses() {
+        global $_registeredPostClasses;
+        return $_registeredPostClasses;
     }
 
 
