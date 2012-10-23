@@ -1,6 +1,6 @@
 <?php
 
-abstract class ooWvcPost extends ooPost {
+abstract class ooRoutemasterPost extends ooPost {
 
 	/**
 	 * Generates the permalink by concatenating this post's name to its parent's (recursively)
