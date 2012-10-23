@@ -1038,7 +1038,7 @@ class ooPost
 
         $postType = static::postType();
         $defaults = array(
-            'post_type'      => array_key_exists($postType, $wp_post_types) ? $postType : null,
+            'post_type'      => array_key_exists($postType, $wp_post_types) ? $postType : 'any',
             'posts_per_page' => -1,
             'post_status' => 'publish'
         );
