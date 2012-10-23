@@ -23,7 +23,6 @@ function create_oo_posts($has_posts, $query)
 $_registeredPostClasses = array();
 $_registeredConnections = array();
 $_knownOowpClasses = array();
-$_oowpTheme = null;
 
 // include all matching classes in ./classes and [current theme]/classes directories,
 // and register any subclasses of ooPost using their static register() function
@@ -46,7 +45,6 @@ function _oowp_init()
 
 	// set up a singleton for the theme
 	global $_knownOowpClasses;
-	global $_oowpTheme;
 	$themeClass = 'ooTheme';
 	foreach ($_knownOowpClasses as $class) {
 		if (is_subclass_of($class, 'ooTheme')) {
@@ -54,8 +52,8 @@ function _oowp_init()
 		}
 	}
 	if (class_exists($themeClass)) {
-		$_oowpTheme = new $themeClass();
-		$_oowpTheme->registerHooks();
+        $oowpTheme = $themeClass::getInstance();
+		$oowpTheme->init();
 	}
 
 	unregister_post_type('post');
@@ -433,3 +431,33 @@ class OOWP_Layout {
 		return locate_template( $templates ) ?: $template;
 	}
 }
+
+
+/**
+ * Shortcode that allows access to the basic  FetchAll functionality through the CMS
+ * Example: [listContent type='event' posts_per_page=3]
+ * @param $params
+ * @param $content
+ */
+function oowp_fetchAll_shortcode($params, $content) {
+	$postType = $params['type']; //what kind of post are we querying
+	unset($params['type']); //don't need this any more
+
+	global $_registeredPostClasses;
+	if(!array_key_exists($postType, $_registeredPostClasses)){
+		if(WP_DEBUG) die('OOWP shortcode error: unknown post-type ('.$postType.')');
+		else return;
+	}
+	//ok - we know it's a valid post type
+
+	$className = $_registeredPostClasses[$postType];
+
+	$query = $className::fetchAll($params);
+
+	if($query){
+		foreach($query as $post){
+			$post->printItem();
+		}
+	}
+}
+add_shortcode('listContent', 'oowp_fetchAll_shortcode');

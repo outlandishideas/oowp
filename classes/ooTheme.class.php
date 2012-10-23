@@ -6,8 +6,11 @@
 class ooTheme {
 
 	protected $allHooks = array();
+    public $registeredPostClasses = array();
+    private static $instance;
 
-	public function __construct() {
+
+    protected function __construct(){
 		$this->allHooks = array(
 			'filter' => array(
 				'body_class',
@@ -20,7 +23,23 @@ class ooTheme {
 			'action' => array(
 			)
 		);
+        $this->registeredPostClasses = $this->registeredPostClasses();
 	}
+
+    /**
+     * @static
+     * @return ooTheme Singleton instance
+     */
+    public static function getInstance() {
+        if (!isset(self::$instance)) {
+            self::$instance = new static();
+        }
+        return self::$instance;
+    }
+
+    public function init() {
+        $this->registerHooks();
+    }
 
 	/**
 	 * Loops through $allHooks, adding any filters/actions that are defined in this theme (sub)class.
@@ -45,4 +64,39 @@ class ooTheme {
 			}
 		}
 	}
+
+    public function siteInfo($info) {
+        return get_bloginfo($info);
+    }
+
+    /*
+     * No trailing slash as standard (http://www.example.com), if trailing slash is required, include as first argument, ($a = '/')
+     * second argument returns protocol for the url (http, https, etc) - see http://codex.wordpress.org/Function_Reference/site_url for more info
+     */
+    public function siteURL($a = null, $b = null) {
+        return site_url($a, $b);
+    }
+
+    public function siteThemeURL() {
+        return get_template_directory_uri();
+    }
+
+    public function siteTitle() {
+        return $this->siteInfo('name');
+    }
+
+    public function  addImageSizes($parent = true){
+        if ( function_exists( 'add_image_size' ) ) {
+            add_image_size( 'category-thumb', 300, 9999 ); //300 pixels wide (and unlimited height)
+            add_image_size( 'homepage-thumb', 220, 180, true ); //(cropped)
+        }
+    }
+
+    private function registeredPostClasses() {
+        global $_registeredPostClasses;
+        return $_registeredPostClasses;
+    }
+
+
+
 }
