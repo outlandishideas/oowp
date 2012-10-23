@@ -54,6 +54,7 @@ function _oowp_init()
 	if (class_exists($themeClass)) {
         $oowpTheme = $themeClass::getInstance();
 		$oowpTheme->init();
+		do_action('oowp_theme_init', $oowpTheme);
 	}
 
 	unregister_post_type('post');
