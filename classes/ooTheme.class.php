@@ -6,7 +6,6 @@
 class ooTheme {
 
 	protected $allHooks = array();
-    public $registeredPostClasses = array();
     private static $instance;
 
 
@@ -23,7 +22,6 @@ class ooTheme {
 			'action' => array(
 			)
 		);
-        $this->registeredPostClasses = $this->registeredPostClasses();
 	}
 
     /**
@@ -92,11 +90,20 @@ class ooTheme {
         }
     }
 
-    private function registeredPostClasses() {
-        global $_registeredPostClasses;
-        return $_registeredPostClasses;
-    }
+	public function postClass($postType) {
+		global $_registeredPostClasses;
+		return $_registeredPostClasses[$postType];
+	}
 
+	public function postType($postClass) {
+		global $_registeredPostClasses;
+		foreach ($_registeredPostClasses as $type=>$class) {
+			if ($class == $postClass) {
+				return $type;
+			}
+		}
+		return null;
+	}
 
 
 }
