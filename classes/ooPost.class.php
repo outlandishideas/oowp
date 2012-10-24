@@ -1007,11 +1007,13 @@ class ooPost
      * @return ooPost|null
      */
     public static function fetchById($ids) {
-		if(!is_array($ids) && is_numeric($ids)){
-			$ids = array($ids);
+		if(is_array($ids) ){
+			$posts = ooPost::fetchAll(array('post__in' => $ids));
+			return $posts;
+		}else{
+			$posts = ooPost::fetchOne(array('p' => $ids));
+			return $posts;
 		}
-	    $posts = ooPost::fetchAll(array('post__in', $ids));
-        return $posts;
     }
 
     public static function fetchBySlug($slug){
