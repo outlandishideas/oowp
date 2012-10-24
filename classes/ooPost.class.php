@@ -1000,12 +1000,12 @@ class ooPost
         return null;
     }
 
-    /**
-     * Factory method for creating a post of the appropriate ooPost subclass, for the given post ID
-     * @static
-     * @param int $id
-     * @return ooPost|null
-     */
+	/**
+	 * Factory method for creating a post of the appropriate ooPost subclass, for the given post ID
+	 * @static
+	 * @param $ids int|int[]
+	 * @return ooPost|ooPost[]|null
+	 */
     public static function fetchById($ids) {
 		if(is_array($ids) ){
 			$posts = ooPost::fetchAll(array('post__in' => $ids));
