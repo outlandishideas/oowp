@@ -682,8 +682,6 @@ class ooPost
         // pick the first specific, or the first non-specific to display
         $match = ($specific ? $specific[0] : ($nonspecific ? $nonspecific[0] : null));
         if ($match) {
-	        global $post;
-	        global $_theme;
             $post = $this;
 	        $_theme = $this->theme();
             if (WP_DEBUG) print "\n\n<!--start $match start-->\n";
