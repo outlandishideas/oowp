@@ -87,7 +87,7 @@ class ooTheme {
         return $this->url();
     }
     public function directory() {
-        return get_theme_root();
+        return get_stylesheet_directory();
     }
 
     public function siteTitle() {
