@@ -1006,17 +1006,12 @@ class ooPost
      * @param int $id
      * @return ooPost|null
      */
-    public static function fetchById($id) {
-        if(is_array($id)){
-            $ids = $id;
-            $posts = array();
-            foreach($ids as $id){
-                $posts[] = get_post($id);
-            }
-        }else{
-            $data = get_post($id);
-            return self::createPostObject($data);
-        }
+    public static function fetchById($ids) {
+		if(!is_array($ids) && is_numeric($ids)){
+			$ids = array($ids);
+		}
+	    $posts = ooPost::fetchAll(array('post__in', $ids));
+        return $posts;
     }
 
     public static function fetchBySlug($slug){
