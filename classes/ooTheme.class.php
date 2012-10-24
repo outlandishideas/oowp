@@ -75,8 +75,19 @@ class ooTheme {
         return site_url($a, $b);
     }
 
-    public function siteThemeURL() {
-        return get_template_directory_uri();
+
+	public function url() {
+		return get_template_directory_uri();
+	}
+	/**
+	 * @deprecated
+	 * @return string
+	 */
+	public function siteThemeURL() {
+        return $this->url();
+    }
+    public function directory() {
+        return get_theme_root();
     }
 
     public function siteTitle() {
