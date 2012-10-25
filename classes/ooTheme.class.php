@@ -117,6 +117,23 @@ class ooTheme {
 	}
 
 	/**
+	 * @deprecated
+	 */
+	public function classes() {
+		return $this->postTypeClasses();
+	}
+
+	public function postTypeClasses() {
+		global $_registeredPostClasses;
+		return array_values($_registeredPostClasses);
+	}
+
+	public function postTypes() {
+		global $_registeredPostClasses;
+		return array_keys($_registeredPostClasses);
+	}
+
+	/**
 	 * @return wpdb
 	 */
 	public function db() {
