@@ -172,7 +172,6 @@ function oowp_initialiseClasses($dir)
  */
 function ooGetClassName($data, $default = 'ooPost')
 {
-	//testing...
 	global $_knownOowpClasses;
 	$reversedClasses = array_reverse($_knownOowpClasses);
 	// generate something to look for, eg my_post_type => MyPostType
