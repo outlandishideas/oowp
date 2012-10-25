@@ -116,5 +116,11 @@ class ooTheme {
 		return null;
 	}
 
-
+	/**
+	 * @return wpdb
+	 */
+	public function db() {
+		global $wpdb;
+		return $wpdb;
+	}
 }
