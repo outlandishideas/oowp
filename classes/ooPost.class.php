@@ -580,11 +580,12 @@ class ooPost
         return implode(', ', $links);
     }
 
-    /**
-     * @static
-     * Prints each of the post_type roots using the 'menuitem' partial
-     * @param array $queryArgs
-     */
+	/**
+	 * @static
+	 * Prints each of the post_type roots using the 'menuitem' partial
+	 * @param array $queryArgs
+	 * @param array $menuArgs
+	 */
     public static function printMenuItems($queryArgs = array(), $menuArgs = array()){
         if(!isset($queryArgs['post_parent'])){
             $posts = static::fetchRoots($queryArgs);
@@ -636,7 +637,7 @@ class ooPost
         return $html;
     }
 
-    public function theme() {
+    public static function theme() {
         return ooTheme::getInstance();
     }
 
@@ -683,7 +684,7 @@ class ooPost
         $match = ($specific ? $specific[0] : ($nonspecific ? $nonspecific[0] : null));
         if ($match) {
             $post = $this;
-	        $_theme = $this->theme();
+	        $_theme = self::theme();
             if (WP_DEBUG) print "\n\n<!--start $match start-->\n";
             include($match);
             if (WP_DEBUG) print "\n<!--end $match end-->\n\n";

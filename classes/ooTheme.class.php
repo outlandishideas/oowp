@@ -117,6 +117,7 @@ class ooTheme {
 	}
 
 
+
 	public function classes(){
 		global $_registeredPostClasses;
 		return $_registeredPostClasses;
