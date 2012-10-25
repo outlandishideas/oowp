@@ -170,7 +170,7 @@ function oowp_initialiseClasses($dir)
  * @param string $default
  * @return string
  */
-function ooGetClassName($data, $default = 'ooPost')
+function ooGetClassName($data, $default = 'ooMiscPost')
 {
 	global $_knownOowpClasses;
 	$reversedClasses = array_reverse($_knownOowpClasses);

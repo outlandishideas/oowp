@@ -1007,7 +1007,7 @@ abstract class ooPost
 		if ($data) {
 			$postData = self::getPostObject($data);
 			if ($postData) {
-				$className = ooGetClassName($postData->post_type, 'ooPost');
+				$className = ooGetClassName($postData->post_type);
 				return new $className($postData);
 			}
 		}
@@ -1146,6 +1146,12 @@ abstract class ooPost
 
 }
 
+/**
+ * As ooPost is abstract, this class is only used for instantiating oowp objects without a corresponding class
+ */
+class ooMiscPost extends ooPost {
+
+}
 
 class ArrayHelper {
 	public $array = array();
