@@ -117,4 +117,17 @@ class ooTheme {
 	}
 
 
+	public function classes(){
+		global $_registeredPostClasses;
+		return $_registeredPostClasses;
+	}
+
+	/**
+	 * @return wpdb
+	 */
+	public function db() {
+		global $wpdb;
+		return $wpdb;
+	}
+
 }
