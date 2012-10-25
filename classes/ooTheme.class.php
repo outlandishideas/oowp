@@ -133,6 +133,14 @@ class ooTheme {
 		return array_keys($_registeredPostClasses);
 	}
 
+	public static function slugify($label) {
+		return str_replace(' ', '-', strtolower($label));
+	}
+
+	public static function labelify($slug) {
+		return ucwords(str_replace('-', ' ', $slug));
+	}
+
 	/**
 	 * @return wpdb
 	 */
