@@ -116,6 +116,13 @@ class ooTheme {
 		return null;
 	}
 
+
+
+	public function classes(){
+		global $_registeredPostClasses;
+		return $_registeredPostClasses;
+	}
+
 	/**
 	 * @deprecated
 	 */
@@ -140,4 +147,5 @@ class ooTheme {
 		global $wpdb;
 		return $wpdb;
 	}
+
 }
