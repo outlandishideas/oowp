@@ -1114,15 +1114,25 @@ abstract class ooPost
 		return is_post_type_hierarchical($postType);
 	}
 
-	/**
-	 * Create a fake instance of a post.
-	 * @static
-	 * @param $postArray
-	 * @return ooPost
-	 */
-	public static function makeFake($postArray) {
+#endregion
+
+
+}
+
+/**
+ * As ooPost is abstract, this class is only used for instantiating oowp objects without a corresponding class
+ */
+class ooMiscPost extends ooPost {
+
+}
+
+/**
+ * As ooPost is abstract, this class can be used for entities that have no real existence, e.g. 404 pages
+ */
+class ooFakePost extends ooPost {
+	public function __construct($args = array()) {
 		//set defaults
-		$postArray = wp_parse_args($postArray, array(
+		$postArray = wp_parse_args($args, array(
 			'ID' => 0,
 			'post_parent' => 0,
 			'post_title' => '',
@@ -1138,19 +1148,8 @@ abstract class ooPost
 			$postArray['post_name'] = sanitize_title_with_dashes($postArray['post_title']);
 		}
 
-		return new static($postArray);
+		parent::__construct($postArray);
 	}
-
-#endregion
-
-
-}
-
-/**
- * As ooPost is abstract, this class is only used for instantiating oowp objects without a corresponding class
- */
-class ooMiscPost extends ooPost {
-
 }
 
 class ArrayHelper {
