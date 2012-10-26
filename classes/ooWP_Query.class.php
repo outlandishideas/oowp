@@ -81,6 +81,15 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	public function queryVars() {
 		return new QueryVars($this->query_vars);
 	}
+
+	public function sortByIds($ids) {
+		$indexes = array_flip($ids);
+		usort($this->posts, function($a, $b) use ($indexes) {
+			$aIndex = $indexes[$a->ID];
+			$bIndex = $indexes[$b->ID];
+			return $aIndex < $bIndex ? -1 : 1;
+		});
+	}
 }
 
 class QueryVars {
