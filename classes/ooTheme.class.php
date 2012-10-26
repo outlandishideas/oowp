@@ -71,10 +71,18 @@ class ooTheme {
      * No trailing slash as standard (http://www.example.com), if trailing slash is required, include as first argument, ($a = '/')
      * second argument returns protocol for the url (http, https, etc) - see http://codex.wordpress.org/Function_Reference/site_url for more info
      */
-    public function siteURL($a = null, $b = null) {
-        return site_url($a, $b);
+    public function siteURL($slash = null, $protocol = null) {
+        return site_url($slash, $protocol);
     }
 
+	public function assetUrl($relativePath) {
+		$relativePath = '/' . ltrim($relativePath, '/');
+		return $this->siteInfo('template_directory') . $relativePath;
+	}
+
+	public function imageUrl($fileName) {
+		return $this->assetUrl('/images/' . $fileName);
+	}
 
 	public function url() {
 		return get_template_directory_uri();
@@ -93,6 +101,10 @@ class ooTheme {
     public function siteTitle() {
         return $this->siteInfo('name');
     }
+
+	public function htmlTitle() {
+		return wp_title('&laquo;', true, 'right') . ' ' . $this->siteTitle();
+	}
 
     public function  addImageSizes($parent = true){
         if ( function_exists( 'add_image_size' ) ) {
