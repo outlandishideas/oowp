@@ -84,8 +84,8 @@ class ooTheme {
 		return $this->assetUrl('/images/' . $fileName);
 	}
 
-	public function url() {
-		return get_template_directory_uri();
+	public function url($path = '') {
+		return get_template_directory_uri() . '/' . ltrim($path, '/');
 	}
 	/**
 	 * @deprecated
@@ -94,8 +94,8 @@ class ooTheme {
 	public function siteThemeURL() {
         return $this->url();
     }
-    public function directory() {
-        return get_stylesheet_directory();
+    public function directory($path = '') {
+        return get_stylesheet_directory() . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
     }
 
     public function siteTitle() {

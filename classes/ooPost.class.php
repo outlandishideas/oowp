@@ -500,14 +500,13 @@ abstract class ooPost
 	 */
 	public function children($queryArgs = array())
 	{
-		global $_registeredPostClasses;
 		$posts = array();
 		$postTypes = (array_key_exists ('post_type', $queryArgs) ? $queryArgs['post_type'] : 'none');
 		unset($queryArgs['post_type']);
 		if (!is_array($postTypes)) $postTypes = array($postTypes);
 		foreach($this->childPostClassNames() as $className){
 			foreach($postTypes as $postType){
-				if($postType != 'none' && $_registeredPostClasses[$postType] == $className){
+				if($postType != 'none' && $this->theme()->postClass($postType) == $className){
 					$posts = array_merge($posts, $className::fetchRoots($queryArgs)->posts);
 				}
 			}
