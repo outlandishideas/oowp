@@ -9,6 +9,7 @@ abstract class ooPost
 {
 
 	protected $_cache = array();
+	protected static $_staticCache = array();
 
 #region Getters, Setters, Construct, Init
 
@@ -1072,8 +1073,12 @@ abstract class ooPost
 	 * @return null|ooPost
 	 */
 	static function fetchHomepage() {
-		$id = get_option('page_on_front');
-		return $id ? self::fetchById($id) : null;
+		$key = 'homepage';
+		if (!array_key_exists($key, ooPost::$_staticCache)) {
+			$id = get_option('page_on_front');
+			ooPost::$_staticCache[$key] = $id ? self::fetchById($id) : null;
+		}
+		return ooPost::$_staticCache[$key];
 	}
 
 	/**
@@ -1084,6 +1089,7 @@ abstract class ooPost
 	 */
 	static function fetchOne($queryArgs)
 	{
+		$queryArgs['posts_per_page'] = 1;
 		$query = new ooWP_Query($queryArgs);
 		return $query->posts ? $query->post : null;
 	}
