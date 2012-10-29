@@ -501,12 +501,12 @@ abstract class ooPost
 	public function children($queryArgs = array())
 	{
 		$posts = array();
-		$postTypes = (array_key_exists ('post_type', $queryArgs) ? $queryArgs['post_type'] : 'none');
+		$postTypes = (array_key_exists ('post_type', $queryArgs) ? $queryArgs['post_type'] : 'any');
 		unset($queryArgs['post_type']);
 		if (!is_array($postTypes)) $postTypes = array($postTypes);
 		foreach($this->childPostClassNames() as $className){
 			foreach($postTypes as $postType){
-				if($postType != 'none' && $this->theme()->postClass($postType) == $className){
+				if($postType == 'any' || ($postType != 'none' && $this->theme()->postClass($postType) == $className)) {
 					$posts = array_merge($posts, $className::fetchRoots($queryArgs)->posts);
 				}
 			}
@@ -608,7 +608,7 @@ abstract class ooPost
 		}
 
 		$menuArgs['max_depth'] = isset($menuArgs['max_depth']) ? $menuArgs['max_depth'] : 0;
-		$menuArgs['current_depth'] = isset($menuArgs['current_depth']) ? $menuArgs['current_depth'] : 0;
+		$menuArgs['current_depth'] = isset($menuArgs['current_depth']) ? $menuArgs['current_depth'] : 1;
 		foreach($posts as $post){
 			$post->printMenuItem($menuArgs);
 		}
@@ -620,7 +620,7 @@ abstract class ooPost
 	public function printItem() { $this->printPartial('item'); }
 	public function printMenuItem($menuArgs = array()) {
 		$menuArgs['max_depth'] = isset($menuArgs['max_depth'])? $menuArgs['max_depth'] : 0;
-		$menuArgs['current_depth'] = isset($menuArgs['current_depth'])? $menuArgs['current_depth'] : 0;
+		$menuArgs['current_depth'] = isset($menuArgs['current_depth'])? $menuArgs['current_depth'] : 1;
 		$this->printPartial('menuitem', $menuArgs);
 	}
 

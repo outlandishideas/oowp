@@ -115,7 +115,7 @@ class ooTheme {
 
 	public function postClass($postType) {
 		global $_registeredPostClasses;
-		return $_registeredPostClasses[$postType];
+		return isset($_registeredPostClasses[$postType]) ? $_registeredPostClasses[$postType] : null;
 	}
 
 	public function postType($postClass) {
