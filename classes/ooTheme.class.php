@@ -75,25 +75,33 @@ class ooTheme {
         return site_url($slash, $protocol);
     }
 
-	public function assetUrl($relativePath) {
+	/**
+	 * Gets the url for an asset in this theme.
+	 * With no argument, this is just the root directory of this theme
+	 * @param string $relativePath
+	 * @return string
+	 */
+	public function assetUrl($relativePath = '') {
 		$relativePath = '/' . ltrim($relativePath, '/');
-		return $this->siteInfo('template_directory') . $relativePath;
+		return get_template_directory_uri() . $relativePath;
 	}
 
 	public function imageUrl($fileName) {
 		return $this->assetUrl('/images/' . $fileName);
 	}
 
-	public function url($path = '') {
-		return get_template_directory_uri() . '/' . ltrim($path, '/');
+	public function jsUrl($fileName) {
+		return $this->assetUrl('/js/' . $fileName);
 	}
+
 	/**
-	 * @deprecated
+	 * @deprecated Use assetUrl() instead
 	 * @return string
 	 */
 	public function siteThemeURL() {
-        return $this->url();
+        return $this->assetUrl();
     }
+
     public function directory($path = '') {
         return get_stylesheet_directory() . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
     }
