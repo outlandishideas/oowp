@@ -244,15 +244,16 @@ abstract class ooPost
 
 	/**
 	 * @param $post int|object|ooPost
+	 * @param array $meta
 	 */
-	public function connect($post) {
+	public function connect($post, $meta = array()) {
 		$post = ooPost::createPostObject($post);
 		if ($post) {
 			$connectionName = self::getConnectionName($post->post_type);
-			/** @var P2P_Connection_Type $connectionType */
+			/** @var P2P_Directed_Connection_Type $connectionType */
 			$connectionType = p2p_type($connectionName);
 			if ($connectionType) {
-				$connectionType->connect($this->ID, $post->ID);
+				$connectionType->connect($this->ID, $post->ID, $meta);
 			}
 		}
 	}
