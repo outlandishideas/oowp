@@ -71,8 +71,8 @@ class ooTheme {
      * No trailing slash as standard (http://www.example.com), if trailing slash is required, include as first argument, ($a = '/')
      * second argument returns protocol for the url (http, https, etc) - see http://codex.wordpress.org/Function_Reference/site_url for more info
      */
-    public function siteURL($slash = null, $protocol = null) {
-        return site_url($slash, $protocol);
+    public function siteURL($relativePath = '') {
+        return site_url(null, null) . '/' . ltrim($relativePath, '/');
     }
 
 	public function assetUrl($relativePath) {
