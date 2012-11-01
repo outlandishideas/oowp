@@ -227,7 +227,7 @@ abstract class ooPost
 		return $this->connected($targetPostType, $single, $queryArgs, $hierarchical);
 	}
 
-	protected static function getConnectionName($targetType) {
+	public static function getConnectionName($targetType) {
 		$types = array($targetType, self::postType());
 		sort($types);
 		return implode('_', $types);
@@ -1008,7 +1008,11 @@ abstract class ooPost
 			$postData = self::getPostObject($data);
 			if ($postData) {
 				$className = ooGetClassName($postData->post_type);
-				return new $className($postData);
+				if ($className == get_class($postData)) {
+					return $postData;
+				} else {
+					return new $className($postData);
+				}
 			}
 		}
 		return null;
