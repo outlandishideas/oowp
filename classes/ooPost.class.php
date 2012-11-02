@@ -253,7 +253,10 @@ abstract class ooPost
 			/** @var P2P_Directed_Connection_Type $connectionType */
 			$connectionType = p2p_type($connectionName);
 			if ($connectionType) {
-				$connectionType->connect($this->ID, $post->ID, $meta);
+				$p2pId = $connectionType->connect($this->ID, $post->ID);
+				foreach ($meta as $key=>$value) {
+					p2p_update_meta($p2pId, $key, $value);
+				}
 			}
 		}
 	}
