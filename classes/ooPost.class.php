@@ -11,6 +11,7 @@ abstract class ooPost
 	protected $_cache = array();
 	protected static $_staticCache = array();
 
+
 #region Getters, Setters, Construct, Init
 
 	/**
@@ -906,9 +907,13 @@ abstract class ooPost
 	 * @return array
 	 */
 	static final function addCustomAdminColumns_internal($defaults) {
-		$helper = new ArrayHelper($defaults);
-		static::addCustomAdminColumns($helper);
-		return $helper->array;
+		if (isset($_GET['post_status']) && $_GET['post_status'] == 'trash') {
+			return $defaults;
+		} else {
+			$helper = new ArrayHelper($defaults);
+			static::addCustomAdminColumns($helper);
+			return $helper->array;
+		}
 	}
 
 	/**
@@ -918,7 +923,16 @@ abstract class ooPost
 	 * @param $post_id
 	 */
 	static final function printCustomAdminColumn_internal($column, $post_id) {
-		static::printCustomAdminColumn($column, ooPost::fetchById($post_id));
+		$key = 'adminColumnPost';
+		// try to get the post from the cache, to minimise re-fetching
+		if (!isset(ooPost::$_staticCache[$key]) || ooPost::$_staticCache[$key]->ID != $post_id) {
+			$status = empty($_GET['post_status']) ? 'publish' : $_GET['post_status'];
+			$query = new ooWP_Query(array('p'=>$post_id, 'posts_per_page'=>1, 'post_status'=>$status));
+			ooPost::$_staticCache[$key] = ($query->post_count ? $query->post : null);
+		}
+		if (ooPost::$_staticCache[$key]) {
+			static::printCustomAdminColumn($column, ooPost::$_staticCache[$key]);
+		}
 	}
 
 	/**
