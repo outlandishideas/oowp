@@ -382,7 +382,7 @@ abstract class ooPost
 	 * @param bool $single
 	 * @return array|string
 	 */
-	public function getMetadata($name, $single = false) {
+	public function metadata($name, $single = true) {
 		$meta = null;
 		if (function_exists('get_field')) {
 			$meta = get_field($name, $this->ID);
@@ -390,6 +390,16 @@ abstract class ooPost
 			$meta = get_post_meta($this->ID, $name, $single);
 		}
 		return $meta;
+	}
+
+	/**
+	 *
+	 * @param $name
+	 * @param bool $single
+	 * @deprecated use ooPost::metadata() instead. Note change in default value for $single.
+	 */
+	public function getMetadata($name, $single = false) {
+
 	}
 
 	/***************************************************************************************************************************************
@@ -772,7 +782,7 @@ abstract class ooPost
 
 
 	protected function featuredImageAttachmentId() {
-		return $this->getMetadata('featured_image', true) ?: $this->getMetadata('image', true);
+		return $this->metadata('featured_image', true) ?: $this->metadata('image', true);
 	}
 
 	public function featuredImageUrl($image_size = 'thumbnail'){
