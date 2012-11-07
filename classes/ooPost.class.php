@@ -396,10 +396,11 @@ abstract class ooPost
 	 *
 	 * @param $name
 	 * @param bool $single
+	 * @return array|string
 	 * @deprecated use ooPost::metadata() instead. Note change in default value for $single.
 	 */
 	public function getMetadata($name, $single = false) {
-
+		return $this->metadata($name, $single);
 	}
 
 	/***************************************************************************************************************************************
