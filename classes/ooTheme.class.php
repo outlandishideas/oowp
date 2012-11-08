@@ -94,6 +94,10 @@ class ooTheme {
 		return $this->assetUrl('/js/' . $fileName);
 	}
 
+	public function cssUrl($fileName) {
+		return $this->assetUrl('/css/' . $fileName);
+	}
+
 	/**
 	 * @deprecated Use assetUrl() instead
 	 * @return string

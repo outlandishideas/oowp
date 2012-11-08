@@ -389,6 +389,9 @@ abstract class ooPost
 		} else {
 			$meta = get_post_meta($this->ID, $name, $single);
 		}
+		if (!$single && !$meta) {
+			$meta = array(); // ensure return type is an array
+		}
 		return $meta;
 	}
 
