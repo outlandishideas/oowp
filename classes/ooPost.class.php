@@ -1191,6 +1191,13 @@ class ooFakePost extends ooPost {
 
 		parent::__construct($postArray);
 	}
+
+	public function permalink() {
+		if (!empty($this->permalink)) {
+			return $this->permalink;
+		}
+		return parent::permalink();
+	}
 }
 
 class ArrayHelper {
