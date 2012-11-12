@@ -220,4 +220,9 @@ class ooTheme {
 		}
 	}
 
+	public static function currentUser() {
+		global $current_user;
+		get_currentuserinfo();
+		return $current_user;
+	}
 }
