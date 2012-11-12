@@ -7,9 +7,9 @@ class ooTheme {
 
 	protected $allHooks = array();
     private static $instance;
+	private $acfFields = array();
 
-
-    protected function __construct(){
+	protected function __construct(){
 		$this->allHooks = array(
 			'filter' => array(
 				'body_class',
@@ -171,6 +171,53 @@ class ooTheme {
 	public function db() {
 		global $wpdb;
 		return $wpdb;
+	}
+
+	/**
+	 * Gets an ACF options value
+	 * @param $optionName
+	 * @return bool|mixed|string
+	 */
+	public function acfOption($optionName) {
+		return get_field($optionName, 'option');
+	}
+
+	/**
+	 * Gets the acf definitions, keyed by their hierarchical name (using hyphens).
+	 * If $name is provided, a single acf definition is returned (if found)
+	 * @param $acfPostName
+	 * @param null $name
+	 * @return array|null
+	 */
+	public function acf($acfPostName, $name = null) {
+		if (!isset($this->acfFields[$acfPostName])) {
+			$wpdb = $this->db();
+			$acfData = $wpdb->get_col("SELECT pm.meta_value FROM $wpdb->posts AS p INNER JOIN $wpdb->postmeta AS pm ON p.ID = pm.post_id WHERE p.post_name = 'acf_{$acfPostName}' AND pm.meta_key like 'field_%'");
+			$acfFields = array();
+			$this->populateAcf($acfFields, $acfData);
+			$this->acfFields[$acfPostName] = $acfFields;
+		}
+		if ($name) {
+			return array_key_exists($name, $this->acfFields[$acfPostName]) ? $this->acfFields[$acfPostName][$name] : null;
+		} else {
+			return $this->acfFields[$acfPostName];
+		}
+	}
+
+	/**
+	 * Recursively populates the acf definitions list
+	 * @param $toPopulate
+	 * @param $data array The ACF definition from the database
+	 * @param string $prefix The prefix to use in the name. (only applicable to hierarchical fields, i.e. repeater fields)
+	 */
+	private function populateAcf(&$toPopulate, $data, $prefix = '') {
+		foreach ($data as $acf) {
+			$acf = maybe_unserialize($acf);
+			$toPopulate[$prefix . $acf['name']] = $acf;
+			if (!empty($acf['sub_fields'])) {
+				$this->populateAcf($toPopulate, $acf['sub_fields'], $acf['name'] . '-');
+			}
+		}
 	}
 
 }
