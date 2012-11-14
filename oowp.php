@@ -6,6 +6,11 @@ Description: A brief description of the Plugin.
 Version: 0.2
 */
 
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooPost.class.php');
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooRoutemasterPost.class.php');
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooTheme.class.php');
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooWP_Query.class.php');
+
 /**
  * Converts all wp post objects in the query into oowp post objects
  */
@@ -29,13 +34,21 @@ $_knownOowpClasses = array();
 add_action('init', '_oowp_init');
 function _oowp_init()
 {
-	$dirs = array(
-		dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes',
-		get_stylesheet_directory() . DIRECTORY_SEPARATOR . 'classes'
-	);
-	foreach ($dirs as $dir) {
-		oowp_initialiseClasses($dir);
-	}
+	// initialise the oowp classes.
+	oowp_initialiseClasses(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes');
+
+	// initialise the classes in the theme.
+	// use an autoloader to prevent dependency problems.
+	$dir = get_stylesheet_directory() . DIRECTORY_SEPARATOR . 'classes';
+	$autoloader = function($class) use ($dir) {
+		$file = "$dir/$class.class.php";
+		if (file_exists($file)) {
+			require_once($file);
+		}
+	};
+	spl_autoload_register($autoloader);
+	oowp_initialiseClasses($dir);
+	spl_autoload_unregister($autoloader);
 
 	// call postRegistration on all registered post types, for e.g. creating p2p connections
 	global $_registeredPostClasses;
