@@ -689,28 +689,7 @@ abstract class ooPost
 		$specific = array();
 		$nonspecific = array();
 		foreach ($places as $path) {
-			if (file_exists($path)) {
-				$fh = opendir($path);
-				while (false !== ($entry = readdir($fh))) {
-					$paths[] = $path . DIRECTORY_SEPARATOR . $entry;
-					if (strpos($entry, $partialType) === 0) {
-						// if there is a file that contains the post name too, make that a priority for selection
-						$postTypeStart = strpos($entry, '-');
-						$postTypeEnd = strpos($entry, '.php');
-						if ($postTypeStart > 0) {
-							// split everything after the '-' by valid separators: ',', '|', '+' or ' '
-							$postTypes = preg_split('/[\s,|\+]+/', substr($entry, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
-							if (in_array($this->postType(), $postTypes)) {
-								$specific[] = $path . DIRECTORY_SEPARATOR . $entry;
-								break;
-							}
-						} else {
-							$nonspecific[] = $path . DIRECTORY_SEPARATOR . $entry;
-						}
-					}
-				}
-				closedir($fh);
-			}
+			$this->findPartialMatches($path, $partialType, $paths, $specific, $nonspecific);
 		}
 
 		// pick the first specific, or the first non-specific to display
@@ -731,6 +710,37 @@ abstract class ooPost
 		</div>
 		<?php
 //  		throw new Exception(sprintf("Partial $partialType not found", $paths, get_class($this)));
+		}
+	}
+
+	protected function findPartialMatches($path, $partialType, &$paths, &$specific, &$nonspecific) {
+		if (file_exists($path)) {
+			if (is_dir($path)) {
+				$fh = opendir($path);
+				while (false !== ($entry = readdir($fh))) {
+					if (!in_array($entry, array('.', '..'))) {
+						$this->findPartialMatches($path . DIRECTORY_SEPARATOR . $entry, $partialType, $paths, $specific, $nonspecific);
+					}
+				}
+				closedir($fh);
+			} else {
+				$paths[] = $path;
+				$filename = basename($path);
+				if (strpos($filename, $partialType) === 0) {
+					// if there is a file that contains the post name too, make that a priority for selection
+					$postTypeStart = strpos($filename, '-');
+					$postTypeEnd = strpos($filename, '.php');
+					if ($postTypeStart > 0) {
+						// split everything after the '-' by valid separators: ',', '|', '+' or ' '
+						$postTypes = preg_split('/[\s,|\+]+/', substr($filename, $postTypeStart+1, $postTypeEnd - $postTypeStart - 1));
+						if (in_array($this->postType(), $postTypes)) {
+							$specific[] = $path;
+						}
+					} else {
+						$nonspecific[] = $path;
+					}
+				}
+			}
 		}
 	}
 
