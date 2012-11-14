@@ -713,16 +713,30 @@ abstract class ooPost
 		}
 	}
 
+	/**
+	 * Recurses through the path structure, looking for files that match the partial type
+	 * @param $path
+	 * @param $partialType
+	 * @param $paths array Populated with all discovered files
+	 * @param $specific array Populated with all post_type/partial exact matches
+	 * @param $nonspecific array Populated with all partial matches (without a post_type)
+	 */
 	protected function findPartialMatches($path, $partialType, &$paths, &$specific, &$nonspecific) {
 		if (file_exists($path)) {
 			if (is_dir($path)) {
+				$entries = array();
 				$fh = opendir($path);
 				while (false !== ($entry = readdir($fh))) {
 					if (!in_array($entry, array('.', '..'))) {
-						$this->findPartialMatches($path . DIRECTORY_SEPARATOR . $entry, $partialType, $paths, $specific, $nonspecific);
+						$entries[] = $entry;
 					}
 				}
 				closedir($fh);
+
+				sort($entries);
+				foreach ($entries as $entry) {
+					$this->findPartialMatches($path . DIRECTORY_SEPARATOR . $entry, $partialType, $paths, $specific, $nonspecific);
+				}
 			} else {
 				$paths[] = $path;
 				$filename = basename($path);
