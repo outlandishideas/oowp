@@ -117,7 +117,7 @@ class QueryVars {
 			// TODO: Is this correct?
 			return in_array($postType, $postTypes);
 		} else {
-			return $postTypes == $postType;
+			return $postTypes == 'any' || $postTypes == $postType;
 		}
 	}
 }
