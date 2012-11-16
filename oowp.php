@@ -359,23 +359,24 @@ function oowp_generate_labels($singular, $plural = null) {
 	);
 }
 
-function oowp_print_right_now_count($count, $postName, $singular, $plural, $status = null) {
-	$num = number_format_i18n($count);
-	$text = _n($singular, $plural, intval($count) );
-
-	if ( current_user_can( 'edit_posts' ) ) {
-		$link = 'edit.php?post_type=' . $postName;
-		if ($status) {
-			$link .= '&post_status='.$status;
+function oowp_print_right_now_count($count, $postType, $singular, $plural, $status = null) {
+	if (get_post_type_object($postType)->show_ui) {
+		$num = number_format_i18n($count);
+		$text = _n($singular, $plural, intval($count) );
+		if ( current_user_can( 'edit_posts' )) {
+			$link = 'edit.php?post_type=' . $postType;
+			if ($status) {
+				$link .= '&post_status='.$status;
+			}
+			$num = "<a href='$link'>$num</a>";
+			$text = "<a href='$link'>$text</a>";
 		}
-		$num = "<a href='$link'>$num</a>";
-		$text = "<a href='$link'>$text</a>";
-	}
 
-	echo '<tr>';
-	echo '<td class="first b b-' . $postName . '">' . $num . '</td>';
-	echo '<td class="t ' . $postName . '">' . $text . '</td>';
-	echo '</tr>';
+		echo '<tr>';
+		echo '<td class="first b b-' . $postType . '">' . $num . '</td>';
+		echo '<td class="t ' . $postType . '">' . $text . '</td>';
+		echo '</tr>';
+	}
 }
 
 /**
