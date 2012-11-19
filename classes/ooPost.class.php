@@ -54,9 +54,18 @@ abstract class ooPost
 	 */
 	public static function init()
 	{
-		$class = new ReflectionClass(get_called_class());
+		$className = get_called_class();
+		$class = new ReflectionClass($className);
 		if (!$class->isAbstract()) {
 			static::register();
+			add_filter('save_post' , function($postId, $postData) use ($className) {
+				if ($postData && $postData->post_type == $className::postType()) {
+					$post = ooPost::fetchById($postId);
+					if ($post) {
+						$post->onSave($postData);
+					}
+				}
+			}, '99', 2); // use high priority value to ensure this happens after acf finishes saving its metadata
 		}
 	}
 
@@ -74,6 +83,14 @@ abstract class ooPost
 	 * @deprecated Replaced by bruv()
 	 */
 	public static function postRegistration() { /* do nothing by default */ }
+
+	/**
+	 * Override this to hook into the save event. This is called with low priority so
+	 * all fields should be already saved
+	 */
+	public function onSave($postData) {
+		// do nothing
+	}
 
 	/**
 	 * @param $name
