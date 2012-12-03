@@ -445,6 +445,10 @@ abstract class ooPost
 		//		return apply_filters('the_date', $this->post_date);
 	}
 
+	public function modifiedDate($format = 'd M Y') {
+		return date($format, strtotime($this->post_modified));
+	}
+
 	public function getParent() {
 		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
 		//stupid git. ignore this.
