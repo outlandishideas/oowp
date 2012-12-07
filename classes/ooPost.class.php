@@ -615,7 +615,7 @@ abstract class ooPost
 	}
 
 	/**
-	 * @return string the Robots meta tag, should be NOINDEX/NOFOLLOW for some post types
+	 * @return string the Robots meta tag, should be NOINDEX, NOFOLLOW for some post types
 	 */
 	public function robots(){
 		return "";
@@ -1252,10 +1252,10 @@ class ooFakePost extends ooPost {
 	}
 
 	/**
-	 * @return string the Robots meta tag, should be NOINDEX/NOFOLLOW for some post types
+	 * @return string the Robots meta tag, should be NOINDEX, NOFOLLOW for some post types
 	 */
 	public function robots(){
-		return "NOINDEX/NOFOLLOW";
+		return "NOINDEX, NOFOLLOW";
 	}
 }
 
