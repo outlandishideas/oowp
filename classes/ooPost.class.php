@@ -614,6 +614,13 @@ abstract class ooPost
 		return $this->callGlobalPost('get_the_author');
 	}
 
+	/**
+	 * @return string the Robots meta tag, should be NOINDEX/NOFOLLOW for some post types
+	 */
+	public function robots(){
+		return "";
+	}
+
 
 #endregion
 
@@ -1242,6 +1249,13 @@ class ooFakePost extends ooPost {
 			return $this->permalink;
 		}
 		return parent::permalink();
+	}
+
+	/**
+	 * @return string the Robots meta tag, should be NOINDEX/NOFOLLOW for some post types
+	 */
+	public function robots(){
+		return "NOINDEX/NOFOLLOW";
 	}
 }
 
