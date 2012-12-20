@@ -876,6 +876,10 @@ abstract class ooPost
 		echo implode($delimiter, $this->breadcrumbs());
 	}
 
+	/**
+	 * @deprecated
+	 * @return ooWP_Query
+	 */
 	public function attachments(){
 		$queryArgs = array( 'post_type' => 'attachment', 'numberposts' => -1, 'post_status' => 'inherit', 'post_parent' => $this->ID );
 		return new ooWP_Query($queryArgs);
