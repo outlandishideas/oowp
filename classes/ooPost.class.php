@@ -931,6 +931,7 @@ abstract class ooPost
 				'supports'	=> array(
 					'title',
 					'editor',
+					'revisions',
 				)
 			);
 			$registrationArgs	 = static::getRegistrationArgs($defaults);
