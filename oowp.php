@@ -70,7 +70,12 @@ function _oowp_init()
 		do_action('oowp_theme_init', $oowpTheme);
 	}
 
-	unregister_post_type('post');
+	// wordpress 3.5 makes unregister_post_type cause errors later on, so just hide the item in the menu instead
+//	unregister_post_type('post');
+	add_action('admin_menu', function() {
+		remove_menu_page('edit.php');
+	});
+
 //	unregister_taxonomy('category');
 //	unregister_taxonomy('post_tag');
 
