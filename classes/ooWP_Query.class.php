@@ -6,7 +6,10 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	 * @var ooPost[]
 	 */
 	var $posts;
-
+	
+	/**
+	 * @param string|array $query
+	 */
 	function __construct($query = '') {
 		$defaults = array(
 			'posts_per_page' => -1,
