@@ -525,7 +525,7 @@ abstract class ooPost
 	public function permalink() {
 		$homepage = self::fetchHomepage();
 		if ($homepage && $homepage->ID == $this->ID) {
-			return get_bloginfo('url');
+			return rtrim(get_bloginfo('url'), '/') . '/';
 		}
 		return get_permalink($this);
 	}
