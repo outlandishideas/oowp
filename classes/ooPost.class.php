@@ -284,7 +284,7 @@ abstract class ooPost
 	 * @param bool $single - just return the first/only post?
 	 * @param array $queryArgs - augment or overwrite the default parameters for the WP_Query
 	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
-	 * @return array
+	 * @return null|ooPost|ooWP_Query
 	 */
 	public function connected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false)
 	{
