@@ -118,12 +118,40 @@ class ooTheme {
 		return wp_title('&laquo;', true, 'right') . ' ' . $this->siteTitle();
 	}
 
-    public function  addImageSizes($parent = true){
+	/**
+	 * @param bool $parent
+	 * @deprecated Use addImageSize instead
+	 */
+	public function  addImageSizes($parent = true){
         if ( function_exists( 'add_image_size' ) ) {
             add_image_size( 'category-thumb', 300, 9999 ); //300 pixels wide (and unlimited height)
             add_image_size( 'homepage-thumb', 220, 180, true ); //(cropped)
         }
     }
+
+	/**
+	 * Adds an image size to the theme, and adds the hook that ensures the thumbnails get resized when edited through the CMS
+	 * @param $name
+	 * @param $width
+	 * @param $height
+	 * @param bool $crop
+	 */
+	public function addImageSize($name, $width, $height, $crop = false){
+		if ( function_exists( 'add_image_size' ) ) {
+			add_image_size( $name, $width, $height, $crop);
+			add_action('image_save_pre', array($this, 'add_image_options'));
+		}
+	}
+
+	function add_image_options($data){
+		global $_wp_additional_image_sizes;
+		foreach($_wp_additional_image_sizes as $size => $properties){
+			update_option($size."_size_w", $properties['width']);
+			update_option($size."_size_h", $properties['height']);
+			update_option($size."_crop", $properties['crop']);
+		}
+		return $data;
+	}
 
 	public function postClass($postType) {
 		global $_registeredPostClasses;
