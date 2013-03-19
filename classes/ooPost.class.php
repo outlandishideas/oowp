@@ -608,8 +608,16 @@ abstract class ooPost
 		wp_reset_postdata();
 		return $returnVal;
 	}
-
+	/**
+	 * @return mixed
+	 * @deprecated use wp_author() instead
+	 */
 	public function author()
+	{
+		return $this->callGlobalPost('get_the_author');
+	}
+
+	public function wp_author()
 	{
 		return $this->callGlobalPost('get_the_author');
 	}
