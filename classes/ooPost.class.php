@@ -431,7 +431,7 @@ abstract class ooPost
 
 	public function title()
 	{
-		return apply_filters('the_title', $this->post_title);
+		return apply_filters('the_title', $this->post_title, $this->ID);
 	}
 
 	public function content()
