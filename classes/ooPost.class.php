@@ -336,7 +336,6 @@ abstract class ooPost
 
 					$post_ids[] = $post->ID;
 				}
-
 			}
 
 			$toReturn = $single ? null : $result;
