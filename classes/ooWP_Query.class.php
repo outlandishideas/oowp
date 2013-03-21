@@ -93,6 +93,24 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 			return $aIndex < $bIndex ? -1 : 1;
 		});
 	}
+
+	/**
+	 * Convert WP_Post objects to ooPost
+	 * @return ooPost[]
+	 */
+	public function get_posts() {
+		parent::get_posts();
+
+		$theme = ooTheme::getInstance();
+		foreach ($this->posts as $i => $post) {
+			$classname = $theme->postClass($post->post_type);
+			$this->posts[$i] = new $classname($post);
+		}
+
+		if (count($this->posts)) $this->post = $this->posts[0];
+
+		return $this->posts;
+	}
 }
 
 class QueryVars {

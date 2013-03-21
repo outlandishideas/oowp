@@ -6,24 +6,10 @@ Description: A brief description of the Plugin.
 Version: 0.2
 */
 
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooPost.class.php');
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooRoutemasterPost.class.php');
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooTheme.class.php');
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . 'ooWP_Query.class.php');
-
-/**
- * Converts all wp post objects in the query into oowp post objects
- */
-add_action('the_posts', 'create_oo_posts', 100, 2);
-function create_oo_posts($has_posts, $query)
-{
-	if ($has_posts) {
-		foreach ($query->posts as $i => $post) {
-			$query->posts[$i] = ooPost::createPostObject($post);
-		}
-	}
-	return $query->posts;
-}
+require_once __DIR__ . '/classes/ooPost.class.php';
+require_once __DIR__ . '/classes/ooRoutemasterPost.class.php';
+require_once __DIR__ . '/classes/ooTheme.class.php';
+require_once __DIR__ . '/classes/ooWP_Query.class.php';
 
 $_registeredPostClasses = array();
 $_registeredConnections = array();
