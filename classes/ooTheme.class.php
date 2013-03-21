@@ -154,8 +154,14 @@ class ooTheme {
 	}
 
 	public function postClass($postType) {
-		global $_registeredPostClasses;
-		return isset($_registeredPostClasses[$postType]) ? $_registeredPostClasses[$postType] : null;
+		global $_registeredPostClasses, $wp_post_types;
+		if (!isset($wp_post_types[$postType])) {
+			return null; //unregistered post type
+		} elseif (!isset($_registeredPostClasses[$postType])) {
+			return 'ooMiscPost'; //post type with no dedicated class
+		} else {
+			return $_registeredPostClasses[$postType];
+		}
 	}
 
 	public function postType($postClass) {

@@ -98,7 +98,7 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	 * Convert WP_Post objects to ooPost
 	 * @return ooPost[]
 	 */
-	public function get_posts() {
+	public function &get_posts() {
 		parent::get_posts();
 
 		$theme = ooTheme::getInstance();
