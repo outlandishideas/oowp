@@ -8,11 +8,9 @@ abstract class ooRoutemasterPost extends ooPost {
 	 * @return string
 	 */
 	public function permalink($leaveName = false) {
-		/** @var $parent ooPost */
-		$parent = $this->getParent();
+		$parent = $this->parent();
 		$parentUrl = $parent ? $parent->permalink() : get_bloginfo('url') . '/';
-		$homepage = self::fetchHomepage();
-		if ($homepage && $this->ID == $homepage->ID) {
+		if ($this->isHomepage()) {
 			return $parentUrl;
 		} else {
 			$postName = $leaveName ? '%postname%' : $this->post_name;

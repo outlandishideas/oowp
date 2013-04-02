@@ -508,9 +508,18 @@ abstract class ooPost
 		return date($format, strtotime($this->post_modified));
 	}
 
+	/**
+	 * @deprecated Use ooPost#parent()
+	 */
 	public function getParent() {
+		return $this->parent();
+	}
+
+	/**
+	 * @return ooPost|null Get parent of post (or post type)
+	 */
+	public function parent() {
 		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
-		//stupid git. ignore this.
 		return $this->getCacheValue() ?: $this->setCacheValue(
 			!empty($parentId) ? ooPost::fetchById($parentId) : null
 		);
@@ -529,7 +538,7 @@ abstract class ooPost
 	 * Traverses up the getParent() hierarchy until finding one with no parent, which is returned
 	 */
 	public function getRoot() {
-		$parent = $this->getParent();
+		$parent = $this->parent();
 		if ($parent) {
 			return $parent->getRoot();
 		}
@@ -582,8 +591,7 @@ abstract class ooPost
 	}
 
 	public function permalink() {
-		$homepage = self::fetchHomepage();
-		if ($homepage && $homepage->ID == $this->ID) {
+		if ($this->isHomepage()) {
 			return rtrim(get_bloginfo('url'), '/') . '/';
 		}
 		return get_permalink($this);
@@ -898,7 +906,7 @@ abstract class ooPost
 		$x = ooPost::getQueriedObject();
 		while (isset($x) && $x) {
 			if ($x->ID == $this->ID) return true;
-			$x = $x->getParent();
+			$x = $x->parent();
 		}
 		return false;
 	}
@@ -923,7 +931,7 @@ abstract class ooPost
 	function breadcrumbs(){
 		$ancestors = array($this->title());
 		$current = $this;
-		while($parent = $current->getParent()){
+		while($parent = $current->parent()){
 			$ancestors[] = $parent->htmlLink();
 			$current = $parent;
 		}
@@ -1238,6 +1246,13 @@ abstract class ooPost
 			ooPost::$_staticCache[$key] = $id ? self::fetchById($id) : null;
 		}
 		return ooPost::$_staticCache[$key];
+	}
+
+	/**
+	 * @return bool true if this is the site homepage
+	 */
+	public function isHomepage() {
+		return $this->ID == get_option('page_on_front');
 	}
 
 	/**

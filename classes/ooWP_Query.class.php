@@ -107,7 +107,11 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 			$this->posts[$i] = new $classname($post);
 		}
 
-		if (count($this->posts)) $this->post = $this->posts[0];
+		if (count($this->posts)) {
+			$this->post = $this->posts[0];
+			$this->queried_object = $this->post;
+			$this->queried_object_id = $this->post->ID;
+		}
 
 		return $this->posts;
 	}

@@ -153,6 +153,11 @@ class ooTheme {
 		return $data;
 	}
 
+	/**
+	 * Get oowp class name for requested post type
+	 * @param string $postType
+	 * @return null|string
+	 */
 	public function postClass($postType) {
 		global $_registeredPostClasses, $wp_post_types;
 		if (!isset($wp_post_types[$postType])) {

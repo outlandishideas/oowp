@@ -176,6 +176,7 @@ function oowp_initialiseClasses($dir)
  */
 function ooGetClassName($data, $default = 'ooMiscPost')
 {
+	//TODO: this seems to do the same thing as ooTheme#postClass()
 	global $_knownOowpClasses;
 	$reversedClasses = array_reverse($_knownOowpClasses);
 	// generate something to look for, eg my_post_type => MyPostType
