@@ -2,14 +2,46 @@
 require_once('ooWP_Query.class.php');
 
 /**
- * This class is a placeholder for all functions which are shared across all post types, and across all sites.
- * It should be extended for each site by e.g. oiPost or irrPost, which should in turn be extended by individual post types e.g. irrEvent, irrShopItem
+ * This class contains functions which are shared across all post types, and across all sites.
+ * It should be extended for each site by e.g. oiPost or irrPost, which should in turn be extended by
+ * individual post types e.g. irrEvent, irrShopItem
+ *
+ * These are the properties of WP_Post which are proxied here.
+ * @property int $ID;
+ * @property int $post_author
+ * @property string $post_date
+ * @property string $post_date_gmt
+ * @property string $post_content
+ * @property string $post_title
+ * @property string $post_excerpt
+ * @property string $post_status
+ * @property string $comment_status
+ * @property string $ping_status
+ * @property string $post_password
+ * @property string $post_name
+ * @property string $to_ping
+ * @property string $pinged
+ * @property string $post_modified
+ * @property string $post_modified_gmt
+ * @property string $post_content_filtered
+ * @property int $post_parent
+ * @property string $guid
+ * @property int $menu_order
+ * @property string $post_type
+ * @property string $post_mime_type
+ * @property int $comment_count
+ * @property string $filter
  */
 abstract class ooPost
 {
 
 	protected $_cache = array();
 	protected static $_staticCache = array();
+
+	/**
+	 * @var WP_Post
+	 */
+	protected $post;
 
 
 #region Getters, Setters, Construct, Init
@@ -20,29 +52,27 @@ abstract class ooPost
 	public function __construct($data)
 	{
 		//Make sure it's an object
-
-		$thePost = $this->getPostObject($data);
-
-		foreach ($thePost as $key => $property) {
-			$this->$key = $property;
-		}
+		$this->post = self::getPostObject($data);
 	}
 
 	/**
 	 * Converts the data into a wordpress post object
 	 * @static
-	 * @param $data
-	 * @return object|ooPost
+	 * @param mixed $data
+	 * @return WP_Post
 	 */
 	public static function getPostObject($data)
 	{
 		if (is_array($data)) {
-			return (object)$data;
-		} else if (is_object($data)) {
+			return new WP_Post((object)$data);
+		} else if (is_object($data) && $data instanceof WP_Post) {
 			return $data;
+		} else if (is_object($data)) {
+			return new WP_Post($data);
 		} else if (is_numeric($data) && is_integer($data+0)) {
 			return get_post($data);
 		} else {
+			//TODO: should this throw an exception instead?
 			global $post;
 			return $post;
 		}
@@ -119,6 +149,34 @@ abstract class ooPost
 			trigger_error('Attempt to call non existenty method ' . $name . ' on class ' . get_class($this));
 			//throw new Exception(sprintf('The required method "%s" does not exist for %s', $name, get_class($this)));
 		}
+	}
+
+	/**
+	 * Proxy magic properties to WP_Post
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function __get($name) {
+		return $this->post->$name;
+	}
+
+	/**
+	 * Proxy magic properties to WP_Post
+	 * @param string $name
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	public function __set($name, $value) {
+		return $this->post->$name = $value;
+	}
+
+	/**
+	 * Proxy magic properties to WP_Post
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function __isset($name) {
+		return isset($this->post->$name);
 	}
 
 	/**
