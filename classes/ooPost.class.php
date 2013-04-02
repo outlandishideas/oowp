@@ -6,7 +6,7 @@ require_once('ooWP_Query.class.php');
  * It should be extended for each site by e.g. oiPost or irrPost, which should in turn be extended by
  * individual post types e.g. irrEvent, irrShopItem
  *
- * These are the properties of WP_Post which are proxied here.
+ * These properties of WP_Post are proxied here.
  * @property int $ID;
  * @property int $post_author
  * @property string $post_date
@@ -31,6 +31,8 @@ require_once('ooWP_Query.class.php');
  * @property string $post_mime_type
  * @property int $comment_count
  * @property string $filter
+ * @property array $ancestors
+ * @property string $page_template
  */
 abstract class ooPost
 {
