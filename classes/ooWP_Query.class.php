@@ -11,6 +11,8 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	 * @param string|array $query
 	 */
 	function __construct($query = '') {
+		global $wp_post_types;
+
 		$defaults = array(
 			'posts_per_page' => -1,
 			'post_status' => 'publish'
@@ -18,7 +20,6 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 		$query = wp_parse_args($query, $defaults);
 
 		// if there is no post type, or the post type is singular and isn't valid, replace it with 'any'
-		global $wp_post_types;
 		if (!isset($query['post_type']) || (!is_array($query['post_type']) && !array_key_exists($query['post_type'], $wp_post_types))) {
 			$query['post_type'] = 'any';
 		}
@@ -61,9 +62,9 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	 * @return mixed
 	 */
 	protected function callGlobalQuery() {
+		global $wp_query;
 		$args     = func_get_args();
 		$function = array_shift($args);
-		global $wp_query;
 		$oldQuery = $wp_query;
 		$wp_query = $this;
 		$returnVal = call_user_func_array($function, $args);

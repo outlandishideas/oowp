@@ -1154,7 +1154,7 @@ abstract class ooPost
 	 * @static factory class creates a post of the appropriate ooPost subclass, populated with the given data
 	 * @param null $data
 	 * @return ooPost - an ooPost object or subclass if it exists
-	 * @deprecated
+	 * @deprecated Use ooPost::createPostObject()
 	 */
 	public static function fetch($data = null)
 	{
@@ -1190,16 +1190,14 @@ abstract class ooPost
 	 */
 	public static function fetchById($ids) {
 		if (is_array($ids)){
-			$posts = new ooWP_Query(array('post__in' => $ids));
-			return $posts;
+			return new ooWP_Query(array('post__in' => $ids));
 		}else{
-			$posts = ooPost::fetchOne(array('p' => $ids));
-			return $posts;
+			return static::fetchOne(array('p' => $ids));
 		}
 	}
 
 	public static function fetchBySlug($slug){
-		return ooPost::fetchOne(array(
+		return static::fetchOne(array(
 			'name' => $slug,
 			'post_type' => static::postType(),
 			'numberposts' => 1
