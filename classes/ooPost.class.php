@@ -1189,10 +1189,12 @@ abstract class ooPost
 	 * @return ooPost|ooWP_Query|null
 	 */
 	public static function fetchById($ids) {
-		if (is_array($ids)){
+		if (is_array($ids) && $ids){
 			return new ooWP_Query(array('post__in' => $ids));
-		}else{
+		}elseif($ids){
 			return static::fetchOne(array('p' => $ids));
+		}else{
+			throw new Exception("no Ids supplied to ooPost::fetchById()");
 		}
 	}
 
