@@ -1,0 +1,8 @@
+{
+    "name": "outlandish/oowp",
+    "version": "dev",
+    "autoload": {
+        "classmap": ["classes/"]
+    },
+    "require": {}
+}
