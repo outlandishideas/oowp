@@ -1,8 +1,11 @@
 {
     "name": "outlandish/oowp",
-    "version": "dev",
     "autoload": {
         "classmap": ["classes/"]
+    },
+    "type": "wordpress-plugin",
+    "require": {
+        "composer/installers": "~1.0"
     },
     "require": {}
 }
