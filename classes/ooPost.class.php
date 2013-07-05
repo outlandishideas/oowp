@@ -594,7 +594,7 @@ abstract class ooPost
 		if ($this->isHomepage()) {
 			return rtrim(get_bloginfo('url'), '/') . '/';
 		}
-		return get_permalink($this);
+		return get_permalink($this->ID);
 	}
 
 	/**
