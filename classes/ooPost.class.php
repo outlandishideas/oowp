@@ -914,6 +914,7 @@ abstract class ooPost
 
     protected function featuredImageAttachmentId() {
         $image = $this->metadata('featured_image', true) ?: $this->metadata('featured_image', true);
+        
         return $image ? $image['id'] : false;
     }
 
