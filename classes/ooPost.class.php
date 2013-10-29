@@ -594,7 +594,7 @@ abstract class ooPost
 		if ($this->isHomepage()) {
 			return rtrim(get_bloginfo('url'), '/') . '/';
 		}
-		return get_permalink($this);
+		return get_permalink($this->ID);
 	}
 
 	/**
@@ -912,9 +912,11 @@ abstract class ooPost
 	}
 
 
-	protected function featuredImageAttachmentId() {
-		return $this->metadata('featured_image', true) ?: $this->metadata('image', true);
-	}
+    protected function featuredImageAttachmentId() {
+        $image = $this->metadata('featured_image', true) ?: $this->metadata('featured_image', true);
+        
+        return $image ? $image['id'] : false;
+    }
 
 	public function featuredImageUrl($image_size = 'thumbnail'){
 		$image = wp_get_attachment_image_src($this->featuredImageAttachmentId(), $image_size);
