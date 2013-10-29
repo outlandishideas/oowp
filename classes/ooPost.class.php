@@ -1169,6 +1169,9 @@ abstract class ooPost
 	 */
 	public static function createPostObject($data = null) {
 		if ($data) {
+			if ($data instanceof ooPost) {
+				return $data;
+			}
 			$postData = self::getPostObject($data);
 			if ($postData) {
 				$className = ooGetClassName($postData->post_type);
