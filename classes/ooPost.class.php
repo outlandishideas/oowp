@@ -696,6 +696,57 @@ abstract class ooPost
 		return "";
 	}
 
+	/**
+	 * Use this with attachment posts to convert the front page of a PDF to a PNG, and create a corresponding attachment.
+	 * Typical usage:
+	 * add_action('add_attachment', function($id) {
+	 *     //use constructor rather than factory to get around auto-draft post_status issue
+	 *     $attachment = new amaAttachment($id);
+	 *     $attachment->generatePdfImage();
+	 * });
+	 */
+	protected function generatePdfImage() {
+		// IMAGEMAGICK_CONVERT should be defined in wp-config.php
+		if (defined('IMAGEMAGICK_CONVERT') && $this->post_mime_type == 'application/pdf') {
+
+			$sourceFile = get_attached_file($this->ID);
+			$targetFile = str_replace('.pdf', '.png', $sourceFile);
+
+			// Converted image will have a fixed size (-extent), centred (-gravity), with the aspect ratio respected (-thumbnail), and
+			// excess space filled with transparent colour (-background)
+			$size = '260x310';
+			$args = array(
+				'-density 96',
+				'-quality 85',
+				'-thumbnail ' . $size,
+//				'-extent ' . $size,
+				'-gravity center',
+				'-background transparent',
+				escapeshellarg($sourceFile . '[0]'),
+				escapeshellarg($targetFile)
+			);
+			$cmd = IMAGEMAGICK_CONVERT . ' ' . implode(' ', $args) . ' 2>&1';
+			$out = exec($cmd, $output, $returnVar);
+
+			// if the convert fails, save the output
+			if ($returnVar != 0) {
+				@file_put_contents(get_stylesheet_directory() . '/debug.txt', json_encode(array('out'=>$out, 'output'=>$output, 'returnVar'=>$returnVar)));
+			} else {
+				//create wordpress attachment for thumbnail image
+				$attachmentSlug = 'pdf-image-' . $this->ID;
+				$targetAttachment = self::fetchBySlug($attachmentSlug);
+				if ($targetAttachment) {
+					wp_delete_attachment($targetAttachment->ID);
+				}
+				wp_insert_attachment(array(
+					'post_title' => '[Thumb] ' . $this->title(),
+					'post_name' => $attachmentSlug,
+					'post_content' => '',
+					'post_mime_type' => 'image/png'
+				), $targetFile);
+			}
+		}
+	}
 
 #endregion
 
