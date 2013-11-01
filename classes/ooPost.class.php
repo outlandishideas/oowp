@@ -698,10 +698,10 @@ abstract class ooPost
 
 	/**
 	 * Use this with attachment posts to convert the front page of a PDF to a PNG, and create a corresponding attachment.
-	 * Typical usage:
+	 * Typical usage (requires project to define xxAttachment class):
 	 * add_action('add_attachment', function($id) {
 	 *     //use constructor rather than factory to get around auto-draft post_status issue
-	 *     $attachment = new amaAttachment($id);
+	 *     $attachment = new xxAttachment($id);
 	 *     $attachment->generatePdfImage();
 	 * });
 	 */
