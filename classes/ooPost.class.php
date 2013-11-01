@@ -697,6 +697,14 @@ abstract class ooPost
 	}
 
 	/**
+	 * Gets the url for editing this post
+	 * @return string
+	 */
+	public function editUrl() {
+		return get_edit_post_link($this->ID);
+	}
+
+	/**
 	 * Use this with attachment posts to convert the front page of a PDF to a PNG, and create a corresponding attachment.
 	 * Typical usage (requires project to define xxAttachment class):
 	 * add_action('add_attachment', function($id) {
