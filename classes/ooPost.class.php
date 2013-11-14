@@ -712,13 +712,15 @@ abstract class ooPost
 	 *     $attachment = new xxAttachment($id);
 	 *     $attachment->generatePdfImage();
 	 * });
+	 * @param string $extension
+	 * @param string $namePrefix
 	 */
-	protected function generatePdfImage() {
+	protected function generatePdfImage($extension = '.png', $namePrefix = 'pdf-image-') {
 		// IMAGEMAGICK_CONVERT should be defined in wp-config.php
 		if (defined('IMAGEMAGICK_CONVERT') && $this->post_mime_type == 'application/pdf') {
 
 			$sourceFile = get_attached_file($this->ID);
-			$targetFile = str_replace('.pdf', '.png', $sourceFile);
+			$targetFile = str_replace('.pdf', $extension, $sourceFile);
 
 			// Converted image will have a fixed size (-extent), centred (-gravity), with the aspect ratio respected (-thumbnail), and
 			// excess space filled with transparent colour (-background)
@@ -738,10 +740,10 @@ abstract class ooPost
 
 			// if the convert fails, save the output
 			if ($returnVar != 0) {
-				@file_put_contents(get_stylesheet_directory() . '/debug.txt', json_encode(array('out'=>$out, 'output'=>$output, 'returnVar'=>$returnVar)));
+				@file_put_contents(get_stylesheet_directory() . '/debug.txt', json_encode(array('out'=>$out, 'output'=>$output, 'returnVar'=>$returnVar, 'cmd'=>$cmd)));
 			} else {
 				//create wordpress attachment for thumbnail image
-				$attachmentSlug = 'pdf-image-' . $this->ID;
+				$attachmentSlug = $namePrefix . $this->ID;
 				$targetAttachment = self::fetchBySlug($attachmentSlug);
 				if ($targetAttachment) {
 					wp_delete_attachment($targetAttachment->ID);
