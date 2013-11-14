@@ -752,7 +752,7 @@ abstract class ooPost
 			if ($returnVar != 0) {
 				$log('conversion failed', true);
 				$log('out: ' . $out, true);
-				$log('output: ' . $output, true);
+				$log('output: ' . print_r($output, true), true);
 				$log('returnVar: ' . $returnVar, true);
 			} else {
 				//create wordpress attachment for thumbnail image
