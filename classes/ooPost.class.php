@@ -751,7 +751,9 @@ abstract class ooPost
 			// if the convert fails, log the output
 			if ($returnVar != 0) {
 				$log('conversion failed', true);
-				$log(json_encode(array('out'=>$out, 'output'=>$output, 'returnVar'=>$returnVar)), true);
+				$log('out: ' . $out, true);
+				$log('output: ' . $output, true);
+				$log('returnVar: ' . $returnVar, true);
 			} else {
 				//create wordpress attachment for thumbnail image
 				$attachmentSlug = $namePrefix . $this->ID;
