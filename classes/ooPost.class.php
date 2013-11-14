@@ -715,12 +715,12 @@ abstract class ooPost
 	 * @param string $extension
 	 * @param string $namePrefix
 	 */
-	protected function generatePdfImage($extension = '.png', $namePrefix = 'pdf-image-') {
+	protected function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-') {
 		// IMAGEMAGICK_CONVERT should be defined in wp-config.php
 		if (defined('IMAGEMAGICK_CONVERT') && $this->post_mime_type == 'application/pdf') {
 
 			$sourceFile = get_attached_file($this->ID);
-			$targetFile = str_replace('.pdf', $extension, $sourceFile);
+			$targetFile = str_replace('.pdf', '.' . $extension, $sourceFile);
 
 			// Converted image will have a fixed size (-extent), centred (-gravity), with the aspect ratio respected (-thumbnail), and
 			// excess space filled with transparent colour (-background)
@@ -752,7 +752,7 @@ abstract class ooPost
 					'post_title' => '[Thumb] ' . $this->title(),
 					'post_name' => $attachmentSlug,
 					'post_content' => '',
-					'post_mime_type' => 'image/png'
+					'post_mime_type' => 'image/' . $extension
 				), $targetFile);
 			}
 		}
