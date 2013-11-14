@@ -712,6 +712,7 @@ abstract class ooPost
 	 *     $attachment = new xxAttachment($id);
 	 *     $attachment->generatePdfImage();
 	 * });
+	 * IMPORTANT!!! in php-fpm.conf, the env[PATH] = /usr/local/bin:/usr/bin:/bin needs to be uncommented for this to work
 	 * @param string $extension
 	 * @param string $namePrefix
 	 * @param bool $logDebug
