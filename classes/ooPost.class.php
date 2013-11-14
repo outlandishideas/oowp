@@ -714,10 +714,19 @@ abstract class ooPost
 	 * });
 	 * @param string $extension
 	 * @param string $namePrefix
+	 * @param bool $logDebug
 	 */
-	protected function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-') {
+	protected function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-', $logDebug = false) {
+		$debug = @fopen(get_stylesheet_directory() . '/debug.txt', 'a');
+		$log = function($message, $force = false) use ($debug, $logDebug) {
+			if ($logDebug || $force) {
+				@fwrite($debug, '[' . date('Y-m-d H:i:s') . "]: $message\n");
+			}
+		};
+		$log('checking for suitability (' . $this->ID . ')');
 		// IMAGEMAGICK_CONVERT should be defined in wp-config.php
 		if (defined('IMAGEMAGICK_CONVERT') && $this->post_mime_type == 'application/pdf') {
+			$log('attempting conversion');
 
 			$sourceFile = get_attached_file($this->ID);
 			$targetFile = str_replace('.pdf', '.' . $extension, $sourceFile);
@@ -738,24 +747,36 @@ abstract class ooPost
 			$cmd = IMAGEMAGICK_CONVERT . ' ' . implode(' ', $args) . ' 2>&1';
 			$out = exec($cmd, $output, $returnVar);
 
-			// if the convert fails, save the output
+			$log($cmd);
+			// if the convert fails, log the output
 			if ($returnVar != 0) {
-				@file_put_contents(get_stylesheet_directory() . '/debug.txt', json_encode(array('out'=>$out, 'output'=>$output, 'returnVar'=>$returnVar, 'cmd'=>$cmd)));
+				$log('conversion failed', true);
+				$log(json_encode(array('out'=>$out, 'output'=>$output, 'returnVar'=>$returnVar)), true);
 			} else {
 				//create wordpress attachment for thumbnail image
 				$attachmentSlug = $namePrefix . $this->ID;
+				$log('creating attachment: ' . $attachmentSlug);
 				$targetAttachment = self::fetchBySlug($attachmentSlug);
 				if ($targetAttachment) {
+					$log('deleting existing attachment: ' . $targetAttachment->ID);
 					wp_delete_attachment($targetAttachment->ID);
 				}
-				wp_insert_attachment(array(
+				$id = wp_insert_attachment(array(
 					'post_title' => '[Thumb] ' . $this->title(),
 					'post_name' => $attachmentSlug,
 					'post_content' => '',
 					'post_mime_type' => 'image/' . $extension
 				), $targetFile);
+				$log('created new attachment: ' . print_r($id, true));
+			}
+		} else {
+			if (!defined('IMAGEMAGICK_CONVERT')) {
+				$log('ignoring: IMAGEMAGICK_CONVERT not defined');
+			} else {
+				$log('ignoring: post type is ' . $this->post_mime_type);
 			}
 		}
+		@fclose($debug);
 	}
 
 #endregion
