@@ -716,7 +716,7 @@ abstract class ooPost
 	 * @param string $namePrefix
 	 * @param bool $logDebug
 	 */
-	protected function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-', $logDebug = false) {
+	public function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-', $logDebug = false) {
 		$debug = @fopen(get_stylesheet_directory() . '/debug.txt', 'a');
 		$log = function($message, $force = false) use ($debug, $logDebug) {
 			if ($debug && ($logDebug || $force)) {
