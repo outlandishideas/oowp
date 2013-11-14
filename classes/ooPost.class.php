@@ -719,11 +719,11 @@ abstract class ooPost
 	protected function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-', $logDebug = false) {
 		$debug = @fopen(get_stylesheet_directory() . '/debug.txt', 'a');
 		$log = function($message, $force = false) use ($debug, $logDebug) {
-			if ($logDebug || $force) {
+			if ($debug && ($logDebug || $force)) {
 				@fwrite($debug, '[' . date('Y-m-d H:i:s') . "]: $message\n");
 			}
 		};
-		$log('checking for suitability (' . $this->ID . ')');
+		$log('checking for suitability (' . $this->ID . ", $extension, $namePrefix)");
 		// IMAGEMAGICK_CONVERT should be defined in wp-config.php
 		if (defined('IMAGEMAGICK_CONVERT') && $this->post_mime_type == 'application/pdf') {
 			$log('attempting conversion');
