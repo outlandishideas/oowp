@@ -697,12 +697,13 @@ abstract class ooPost
 	}
 
 	/**
-	 * Gets the url for editing this post
+	 * Gets the url for editing this post. Returns blank if $requireLoggedIn is true and the logged-in user doesn't have the right permissions
+	 * @param $requireLoggedIn
 	 * @return string
 	 */
-	public function editUrl() {
+	public function editUrl($requireLoggedIn = false) {
 		$url = get_edit_post_link($this->ID, '');
-		if (!$url) {
+		if (!$url && !$requireLoggedIn) {
 			$post_type_object = get_post_type_object(static::postType());
 			$url = admin_url( sprintf($post_type_object->_edit_link . '&action=edit', $this->ID));
 		}
