@@ -701,7 +701,12 @@ abstract class ooPost
 	 * @return string
 	 */
 	public function editUrl() {
-		return get_edit_post_link($this->ID);
+		$url = get_edit_post_link($this->ID, '');
+		if (!$url) {
+			$post_type_object = get_post_type_object(static::postType());
+			$url = admin_url( sprintf($post_type_object->_edit_link . '&action=edit', $this->ID));
+		}
+		return $url;
 	}
 
 	/**
