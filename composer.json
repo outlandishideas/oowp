@@ -1,10 +1,28 @@
 {
-    "name": "outlandish/oowp",
-    "autoload": {
-        "classmap": ["classes/"]
+  "name": "outlandish/oowp",
+  "autoload": {
+    "classmap": [
+      "classes/"
+    ]
+  },
+  "type": "wordpress-muplugin",
+  "description": "A routing plugin for WordPress",
+  "minimum-stability": "dev",
+  "authors": [
+    {
+      "name": "Rasmus Winter",
+      "email": "ras@outlandish.com"
     },
-    "type": "wordpress-plugin",
-    "require": {
-        "composer/installers": "~1.0"
-    }
+    {
+      "name": "Tamlyn Rhodes",
+      "email": "tam@outlandish.com"
+    },
+    {
+      "name": "Harry Robbins",
+      "email": "harry@outlandish.com"
+    },
+  ],
+  "require": {
+    "composer/installers": "~1.0"
+  }
 }
