@@ -20,7 +20,7 @@
     {
       "name": "Harry Robbins",
       "email": "harry@outlandish.com"
-    },
+    }
   ],
   "require": {
     "composer/installers": "~1.0"
