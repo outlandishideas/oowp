@@ -4,10 +4,9 @@
 	if ($post->isCurrentPageAncestor()) echo ' current_page_ancestor'; ?>">
 
 	<a href="<?php echo $post->permalink(); ?>"><?php echo $post->title(); ?></a>
-	<?php
-
-    $args['current_depth']++;
-    if ($post->children()->posts && ( ($args['current_depth'] < $args['max_depth']) || (!$args['max_depth']) )): ?>
+	
+    <?php $args['current_depth']++; ?>
+    <?php if ($post->children()->posts && ( ($args['current_depth'] < $args['max_depth']) || (!$args['max_depth']) )): ?>
 		<ul class='children'>
 			<?php
 			foreach($post->children() as $child){
@@ -15,5 +14,5 @@
 			}
 			?>
 		</ul>
-		<?php endif; ?>
+	<?php endif; ?>
 </li>
