@@ -62,8 +62,8 @@ function _oowp_init()
 		remove_menu_page('edit.php');
 	});
 
-//	unregister_taxonomy('category');
-//	unregister_taxonomy('post_tag');
+//	oowp_unregister_taxonomy('category');
+//	oowp_unregister_taxonomy('post_tag');
 
 	if (is_admin()) {
 		add_action('admin_head', 'oowp_add_admin_styles');
@@ -256,7 +256,15 @@ endif;
  * @param array|string $object_type Name of the object type
  * @return bool True if successful, false if not
  */
-function unregister_taxonomy($taxonomy, $object_type = '')
+
+if(!function_exists('unregister_taxonomy')){
+	function unregister_taxonomy($taxonomy, $object_type = ''){
+		oowp_unregister_taxonomy($taxonomy, $object_type);
+	}
+}
+
+
+function oowp_unregister_taxonomy($taxonomy, $object_type = '')
 {
 	global $wp_taxonomies;
 
