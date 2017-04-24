@@ -1,6 +1,8 @@
 <?php
 
-abstract class ooRoutemasterPost extends ooPost {
+namespace Outlandish\Wordpress\Oowp\PostTypes;
+
+abstract class RoutemasterPost extends WordpressPost {
 
 	/**
 	 * Generates the permalink by concatenating this post's name to its parent's (recursively)

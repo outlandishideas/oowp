@@ -1,12 +1,17 @@
 <?php
-class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Countable
+
+namespace Outlandish\Wordpress\Oowp;
+
+use Outlandish\Wordpress\Oowp\PostTypes\WordpressPost;
+
+class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \Countable
 {
 
 	/**
-	 * @var ooPost[]
+	 * @var WordpressPost[]
 	 */
 	var $posts;
-	
+
 	/**
 	 * @param string|array $query
 	 */
@@ -34,7 +39,7 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	/* Interfaces */
 
 	public function getIterator() {
-		return new ArrayIterator($this->posts);
+		return new \ArrayIterator($this->posts);
 	}
 
 	public function offsetExists($offset) {
@@ -96,15 +101,15 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 	}
 
 	/**
-	 * Convert WP_Post objects to ooPost
-	 * @return ooPost[]
+	 * Convert WP_Post objects to WordpressPost
+	 * @return WordpressPost[]
 	 */
 	public function &get_posts() {
 		parent::get_posts();
 
-		$theme = ooTheme::getInstance();
+		$manager = PostTypeManager::get();
 		foreach ($this->posts as $i => $post) {
-			$classname = $theme->postClass($post->post_type);
+			$classname = $manager->getClassName($post->post_type);
 			$this->posts[$i] = new $classname($post);
 		}
 
@@ -115,35 +120,5 @@ class ooWP_Query extends WP_Query implements IteratorAggregate, ArrayAccess, Cou
 		}
 
 		return $this->posts;
-	}
-}
-
-class QueryVars {
-	private $args;
-
-	function __construct($data) {
-		if ($data instanceof WP_Query) {
-			$this->args = $data->query_vars;
-		} else {
-			$this->args = $data;
-		}
-	}
-
-	public function hasArg($arg) {
-		return isset($this->args[$arg]);
-	}
-
-	public function arg($arg) {
-		return $this->args[$arg];
-	}
-
-	public function isForPostType($postType) {
-		$postTypes = $this->args['post_type'];
-		if (is_array($postTypes)) {
-			// TODO: Is this correct?
-			return in_array($postType, $postTypes);
-		} else {
-			return $postTypes == 'any' || $postTypes == $postType;
-		}
 	}
 }

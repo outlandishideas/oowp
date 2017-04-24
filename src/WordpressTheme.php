@@ -1,32 +1,26 @@
 <?php
 
+namespace Outlandish\Wordpress\Oowp;
+
 /**
- * Subclass this in your theme's classes directory, and put all theme functionality in it instead of in functions.php
+ * Helper class for common theme-related functionality.
+ *
+ * Subclass this in your theme's classes directory, and put all theme-specific functionality in its init() function
+ * instead of in functions.php, then call init() inside a wordpress 'init' action listener
  */
-class ooTheme {
+class WordpressTheme {
+
+    private static $instance;
 
 	protected $allHooks = array();
-    private static $instance;
 	private $acfFields = array();
 
 	protected function __construct(){
-		$this->allHooks = array(
-			'filter' => array(
-				'body_class',
-				'excerpt_length',
-				'excerpt_more',
-				'get_the_excerpt',
-				'the_content',
-				'rewrite_rules_array'
-			),
-			'action' => array(
-			)
-		);
 	}
 
     /**
      * @static
-     * @return ooTheme Singleton instance
+     * @return static Singleton instance
      */
     public static function getInstance() {
         if (!isset(self::$instance)) {
@@ -36,32 +30,7 @@ class ooTheme {
     }
 
     public function init() {
-        $this->registerHooks();
     }
-
-	/**
-	 * Loops through $allHooks, adding any filters/actions that are defined in this theme (sub)class.
-	 * Eg to change the string at the end of an excerpt, simply define a function called filter_excerpt_more that returns a string
-	 */
-	public function registerHooks() {
-		$defaultArgs = array(10, 1);
-		foreach ($this->allHooks as $type=>$hooks) {
-			$addHookFunction = 'add_' . $type;
-			foreach ($hooks as $key => $value) {
-				if (is_numeric($key)) {
-					$hook = $value;
-					$args = $defaultArgs;
-				} else {
-					$hook = $key;
-					$args = $value;
-				}
-				$hookFunction = $type . '_' . $hook;
-				if (method_exists($this, $hookFunction)) {
-					$addHookFunction($hook, array($this, $hookFunction), $args[0], $args[1]);
-				}
-			}
-		}
-	}
 
     public function siteInfo($info) {
         return get_bloginfo($info);
@@ -139,11 +108,11 @@ class ooTheme {
 	public function addImageSize($name, $width, $height, $crop = false){
 		if ( function_exists( 'add_image_size' ) ) {
 			add_image_size( $name, $width, $height, $crop);
-			add_action('image_save_pre', array($this, 'add_image_options'));
+			add_action('image_save_pre', array($this, 'addImageOptions'));
 		}
 	}
 
-	function add_image_options($data){
+	function addImageOptions($data){
 		global $_wp_additional_image_sizes;
 		foreach($_wp_additional_image_sizes as $size => $properties){
 			update_option($size."_size_w", $properties['width']);
@@ -151,49 +120,6 @@ class ooTheme {
 			update_option($size."_crop", $properties['crop']);
 		}
 		return $data;
-	}
-
-	/**
-	 * Get oowp class name for requested post type
-	 * @param string $postType
-	 * @return null|string
-	 */
-	public function postClass($postType) {
-		global $_registeredPostClasses, $wp_post_types;
-		if (!isset($wp_post_types[$postType])) {
-			return null; //unregistered post type
-		} elseif (!isset($_registeredPostClasses[$postType])) {
-			return 'ooMiscPost'; //post type with no dedicated class
-		} else {
-			return $_registeredPostClasses[$postType];
-		}
-	}
-
-	public function postType($postClass) {
-		global $_registeredPostClasses;
-		foreach ($_registeredPostClasses as $type=>$class) {
-			if ($class == $postClass) {
-				return $type;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * @deprecated
-	 */
-	public function classes() {
-		return $this->postTypeClasses();
-	}
-
-	public function postTypeClasses() {
-		global $_registeredPostClasses;
-		return array_values($_registeredPostClasses);
-	}
-
-	public function postTypes() {
-		global $_registeredPostClasses;
-		return array_keys($_registeredPostClasses);
 	}
 
 	public static function slugify($label) {
@@ -205,7 +131,7 @@ class ooTheme {
 	}
 
 	/**
-	 * @return wpdb
+	 * @return \wpdb
 	 */
 	public function db() {
 		global $wpdb;

@@ -1,0 +1,7 @@
+#dashboard_right_now .post-type-icon a:before {
+  content: none;
+}
+
+#dashboard_right_now .post-type-icon .dashicons {
+  padding-right: 5px;
+}
