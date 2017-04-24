@@ -526,6 +526,7 @@ abstract class WordpressPost
 		$queryArgs = wp_parse_args($queryArgs, $defaults);
 		$children = static::fetchAll($queryArgs);
 		$children->posts = array_merge($children->posts, $posts);
+		$children->post_count = count($children->posts);
 		return $children;
 	}
 
@@ -864,6 +865,9 @@ abstract class WordpressPost
 			$postData = self::getPostObject($data);
 			if ($postData) {
 				$className = PostTypeManager::get()->getClassName($postData->post_type);
+                if (!$className) {
+                    $className = MiscPost::class;
+                }
 				if ($postData instanceof $className) {
 					return $postData;
 				} else {

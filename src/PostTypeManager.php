@@ -2,6 +2,8 @@
 
 namespace Outlandish\Wordpress\Oowp;
 
+use Outlandish\Wordpress\Oowp\PostTypes\OowpPage;
+use Outlandish\Wordpress\Oowp\PostTypes\OowpPost;
 use Outlandish\Wordpress\Oowp\PostTypes\WordpressPost;
 use Outlandish\Wordpress\Oowp\Util\AdminUtils;
 
@@ -80,6 +82,10 @@ class PostTypeManager
 		}
 
 		/** @var WordpressPost[]|string[] $classNames */
+
+		$classNames[] = OowpPage::class;
+		$classNames[] = OowpPost::class;
+		$classNames = array_unique($classNames);
 
 		// register all classes
 		foreach ($classNames as $className) {

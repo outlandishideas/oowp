@@ -107,10 +107,8 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 	public function &get_posts() {
 		parent::get_posts();
 
-		$manager = PostTypeManager::get();
 		foreach ($this->posts as $i => $post) {
-			$classname = $manager->getClassName($post->post_type);
-			$this->posts[$i] = new $classname($post);
+			$this->posts[$i] = WordpressPost::createWordpressPost($post);
 		}
 
 		if (count($this->posts)) {
