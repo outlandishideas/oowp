@@ -6,11 +6,14 @@ use Outlandish\Wordpress\Oowp\WordpressTheme;
 
 abstract class OowpView
 {
-    protected $theme;
+    public $theme;
 
-    public function __construct()
+    public function __construct($args = [])
     {
         $this->theme = WordpressTheme::getInstance();
+        foreach($args as $name => $value) {
+            $this->$name = $value;
+        }
     }
 
     public function toHtml($args = [])
