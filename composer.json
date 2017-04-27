@@ -9,6 +9,7 @@
   "description": "A routing plugin for WordPress",
   "minimum-stability": "dev",
   "license": "GPL-3.0",
+  "version": "0.9.1",
   "authors": [
     {
       "name": "Rasmus Winter",
