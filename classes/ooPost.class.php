@@ -462,6 +462,13 @@ abstract class ooPost
 		$meta = null;
 		if (function_exists('get_field')) {
 			$meta = get_field($name, $this->ID);
+			// if not found by acf, then may not be an acf-configured field, so fall back on normal wp method
+			if ($meta === false) {
+				$fieldObj = get_field_object($name, $this->ID);
+				if (!$fieldObj || !$fieldObj['key']) {
+					$meta = get_post_meta($this->ID, $name, $single);
+				}
+			}
 		} else {
 			$meta = get_post_meta($this->ID, $name, $single);
 		}
