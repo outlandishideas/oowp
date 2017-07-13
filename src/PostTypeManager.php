@@ -36,10 +36,14 @@ class PostTypeManager
     {
 		/** @var WordpressPost|string $className */
 
-    	if (!is_subclass_of($className, WordpressPost::class)) {
+    	if (!is_subclass_of($className, 'Outlandish\Wordpress\Oowp\PostTypes\WordpressPost')) {
     		throw new \RuntimeException($className . ' is not a subclass of WordpressPost');
 		}
     	$postType = $className::postType();
+        if (in_array($postType, $this->postTypes)) {
+            // already registered
+            return;
+        }
 		if ($postType !== 'page' && $postType !== 'post' && $postType !== 'attachment' ) {
 			$defaults = array(
 				'labels' => AdminUtils::generateLabels($className::friendlyName(), $className::friendlyNamePlural()),
@@ -69,7 +73,9 @@ class PostTypeManager
 	/**
 	 * Registers the given classes as OOWP post types
 	 *
-	 * Usage:
+	 * Usage (php < 5.5):
+	 * $manager->registerPostTypes(['namespace\of\posttypes\MyPostType', 'namespace\of\posttypes\AnotherPostType'])
+	 * Usage (php >= 5.5):
 	 * $manager->registerPostTypes([MyPostType::class, AnotherPostType::class])
 	 *
 	 * @param string[] $classNames
@@ -83,8 +89,9 @@ class PostTypeManager
 
 		/** @var WordpressPost[]|string[] $classNames */
 
-		$classNames[] = OowpPage::class;
-		$classNames[] = OowpPost::class;
+		// add the built-in post/page classes after all of the others
+		$classNames[] = 'Outlandish\Wordpress\Oowp\PostTypes\OowpPage';
+		$classNames[] = 'Outlandish\Wordpress\Oowp\PostTypes\OowpPost';
 		$classNames = array_unique($classNames);
 
 		// register all classes

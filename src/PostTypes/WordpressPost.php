@@ -873,7 +873,7 @@ abstract class WordpressPost
 			if ($postData) {
 				$className = PostTypeManager::get()->getClassName($postData->post_type);
                 if (!$className) {
-                    $className = MiscPost::class;
+                    $className = 'Outlandish\Wordpress\Oowp\PostTypes\MiscPost';
                 }
 				if ($postData instanceof $className) {
 					return $postData;
