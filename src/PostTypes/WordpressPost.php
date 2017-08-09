@@ -762,9 +762,15 @@ abstract class WordpressPost
 
 
     protected function featuredImageAttachmentId() {
-        $image = $this->metadata('featured_image', true) ?: $this->metadata('featured_image', true);
+        $image = $this->metadata('featured_image', true) ?: $this->metadata('image', true);
 
-        return $image ? $image['id'] : false;
+        if ($image) {
+            if (is_numeric($image)) {
+                return $image;
+            }
+            return $image['id'];
+        }
+        return false;
     }
 
 	public function featuredImageUrl($image_size = 'thumbnail'){
