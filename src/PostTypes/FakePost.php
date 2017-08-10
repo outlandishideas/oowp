@@ -27,11 +27,11 @@ class FakePost extends WordpressPost {
         parent::__construct($postArray);
     }
 
-    public function permalink() {
+    public function permalink($leaveName = false) {
         if (!empty($this->permalink)) {
             return $this->permalink;
         }
-        return parent::permalink();
+        return parent::permalink($leaveName);
     }
 
     /**

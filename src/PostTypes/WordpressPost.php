@@ -498,11 +498,11 @@ abstract class WordpressPost
 		return ($excerpt);
 	}
 
-	public function permalink() {
+	public function permalink($leaveName = false) {
 		if ($this->isHomepage()) {
 			return rtrim(get_bloginfo('url'), '/') . '/';
 		}
-		return get_permalink($this->ID);
+		return get_permalink($this->ID, $leaveName);
 	}
 
 	/**
