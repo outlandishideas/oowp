@@ -24,7 +24,7 @@ class AdminUtils
 //	oowp_unregister_taxonomy('category');
 //	oowp_unregister_taxonomy('post_tag');
 
-		$publicDir = plugin_dir_url(__FILE__) . '../../public';
+        $publicDir = plugin_dir_url(realpath(__DIR__ . '/../../public') . '/fake.txt');
 		if (is_admin()) {
 			add_action('admin_head', function() use ($postTypes) {
 				self::addAdminStyles($postTypes);
