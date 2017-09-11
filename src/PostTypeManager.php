@@ -50,7 +50,6 @@ class PostTypeManager
 		}
 
 		$this->postTypes[$className] = $postType;
-		$this->connections[$postType] = array();
 
 		do_action('oowp/post_type_registered', $postType, $className);
     }
@@ -135,45 +134,45 @@ class PostTypeManager
 		return array_values($this->postTypes);
 	}
 
-	/**
-	 * Registers a new connection between two post types
-	 * @param string $postType
-	 * @param string $targetPostType
-	 * @param array $parameters
-	 * @return bool|object
-	 */
-	public function registerConnection($postType, $targetPostType, $parameters)
+    /**
+     * Registers a new connection between two post types
+     * @param string $postType
+     * @param string $targetPostType
+     * @param array $parameters
+     * @param string $connectionName
+     * @return bool|object
+     */
+	public function registerConnection($postType, $targetPostType, $parameters, $connectionName = null)
 	{
 		if (!function_exists('p2p_register_connection_type')) {
 			return null;
 		}
 
-		if(!array_key_exists($postType, $this->connections)) {
-			$this->connections[$postType] = array();
-		}
-		if(!array_key_exists($targetPostType, $this->connections)) {
-			$this->connections[$targetPostType] = array();
-		}
-		if(in_array($targetPostType, $this->connections[$postType]) || in_array($postType, $this->connections[$targetPostType])) {
-			return false; //this connection has already been registered
-		}
-		$this->connections[$targetPostType][] = $postType;
-		$this->connections[$postType][] = $targetPostType;
+		if (!$connectionName) {
+            $connectionName = $this->generateConnectionName($postType, $targetPostType);
+        }
 
-		$types = array($targetPostType, $postType);
-		sort($types);
+        if (array_key_exists($connectionName, $this->connections)) {
+		    return $this->connections[$connectionName]->connection;
+        }
 
-		$connection_name = $this->generateConnectionName($postType, $targetPostType);
 		$defaults = array(
-			'name' => $connection_name,
-			'from' => $types[0],
-			'to' => $types[1],
+			'name' => $connectionName,
+			'from' => $postType,
+			'to' => $targetPostType,
 			'cardinality' => 'many-to-many',
 			'reciprocal' => true
 		);
 
 		$parameters = wp_parse_args($parameters, $defaults);
-		return p2p_register_connection_type($parameters);
+		$connection = p2p_register_connection_type($parameters);
+
+		$this->connections[$connectionName] = (object) [
+		    'parameters' => $parameters,
+		    'connection' => $connection
+        ];
+
+		return $connection;
 	}
 
 	/**
@@ -195,8 +194,45 @@ class PostTypeManager
 	 * @param string $postType
 	 * @return string[]
 	 */
-	public function getConnections($postType)
+	public function getConnectedPostTypes($postType)
 	{
-		return array_key_exists($postType, $this->connections) ? $this->connections[$postType] : array();
+	    $types = [];
+	    foreach ($this->connections as $connection) {
+	        if ($connection->parameters['from'] === $postType) {
+	            $types[] = $connection->parameters['to'];
+            }
+	        if ($connection->parameters['to'] === $postType) {
+	            $types[] = $connection->parameters['from'];
+            }
+        }
+        return array_unique($types);
 	}
+
+    /**
+     * Gets all of the connection names that go between (one of) $postTypeA and (one of) $postTypeB
+     * @param string|string[] $postTypeA
+     * @param string|string[] $postTypeB
+     * @return string[]
+     */
+	public function getConnectionNames($postTypeA, $postTypeB)
+    {
+        $connectionNames = [];
+        if ($postTypeA && $postTypeB) {
+            if (!is_array($postTypeB)) {
+                $postTypeB = [$postTypeB];
+            }
+            if (!is_array($postTypeA)) {
+                $postTypeA = [$postTypeA];
+            }
+            foreach ($this->connections as $name => $connection) {
+                if (in_array($connection->parameters['from'], $postTypeA) && in_array($connection->parameters['to'], $postTypeB)) {
+                    $connectionNames[] = $name;
+                }
+                if (in_array($connection->parameters['from'], $postTypeB) && in_array($connection->parameters['to'], $postTypeA)) {
+                    $connectionNames[] = $name;
+                }
+            }
+        }
+        return array_unique($connectionNames);
+    }
 }

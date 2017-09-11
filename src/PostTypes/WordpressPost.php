@@ -208,14 +208,17 @@ abstract class WordpressPost
 		}
 	}
 
-	/**
-	 * @param $post int|object|WordpressPost
-	 * @param array $meta
-	 */
-	public function connect($post, $meta = array()) {
+    /**
+     * @param $post int|object|WordpressPost
+     * @param array $meta
+     * @param string $connectionName
+     */
+	public function connect($post, $meta = array(), $connectionName = null) {
 		$post = WordpressPost::createWordpressPost($post);
 		if ($post) {
-			$connectionName = PostTypeManager::get()->generateConnectionName(self::postType(), $post->post_type);
+		    if (!$connectionName) {
+                $connectionName = PostTypeManager::get()->generateConnectionName(self::postType(), $post->post_type);
+            }
 			/** @var \P2P_Directed_Connection_Type $connectionType */
 			$connectionType = p2p_type($connectionName);
 			if ($connectionType) {
@@ -227,14 +230,15 @@ abstract class WordpressPost
 		}
 	}
 
-	/**
-	 * @param $targetPostType string e.g. post, event - the type of post you want to connect to
-	 * @param bool $single - just return the first/only post?
-	 * @param array $queryArgs - augment or overwrite the default parameters for the WP_Query
-	 * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
-	 * @return null|WordpressPost|OowpQuery
-	 */
-	public function connected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false)
+    /**
+     * @param string|string[] $targetPostType e.g. post, event - the type of connected post(s) you want
+     * @param bool $single - just return the first/only post?
+     * @param array $queryArgs - augment or overwrite the default parameters for the WP_Query
+     * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
+     * @param string|string[] $connectionName If specified, only this connection name is used to find the connected posts (defaults to any/all connections to $targetPostType)
+     * @return null|OowpQuery|WordpressPost
+     */
+	public function connected($targetPostType, $single = false, $queryArgs = array(), $hierarchical = false, $connectionName = null)
 	{
 		$toReturn = null;
 		if (function_exists('p2p_register_connection_type')) {
@@ -243,17 +247,23 @@ abstract class WordpressPost
 			}
 			$manager = PostTypeManager::get();
 			$postType = self::postType();
-			$connection_name = array();
-			foreach ($targetPostType as $targetType) {
-				$connection_name[] = $manager->generateConnectionName($postType, $targetType);
-			}
+
+			if (!$connectionName) {
+                $connectionName = $manager->getConnectionNames($postType, $targetPostType);
+            } else if (!is_array($connectionName)) {
+			    $connectionName = [$connectionName];
+            }
 
 			$defaults = array(
-				'connected_type'  => $connection_name,
-				'post_type'	   => $targetPostType,
+				'connected_type' => $connectionName,
+				'post_type' => $targetPostType,
 			);
 
-			#todo optimisation: check to see if this post type is hierarchical first
+			// ignore $hierarchical = true if this post type is not hierarchical
+			if ($hierarchical && !self::isHierarchical($postType)) {
+			    $hierarchical = false;
+            }
+
 			if ($hierarchical) {
 				$defaults['connected_items'] = array_merge($this->getDescendantIds(), array($this->ID));
 			} else {
@@ -263,8 +273,8 @@ abstract class WordpressPost
 			// use the menu order if $hierarchical is true, or any of the target post types are hierarchical
 			$useMenuOrder = $hierarchical;
 			if (!$useMenuOrder) {
-				foreach ($targetPostType as $postType) {
-					if (self::isHierarchical($postType)) {
+				foreach ($targetPostType as $otherPostType) {
+					if (self::isHierarchical($otherPostType)) {
 						$useMenuOrder = true;
 						break;
 					}
@@ -558,7 +568,7 @@ abstract class WordpressPost
 	 */
 	public static function connectedPostTypes()
 	{
-		return PostTypeManager::get()->getConnections(self::postType());
+		return PostTypeManager::get()->getConnectedPostTypes(self::postType());
 	}
 
 	/**
@@ -867,15 +877,16 @@ abstract class WordpressPost
 		return $ooQueriedObject;
 	}
 
-	/**
-	 * @static Creates a p2p connection to another post type
-	 * @param $targetPostType - the post_type of the post type you want to connect to
-	 * @param array $parameters - these can overwrite the defaults. though if you change the name of the connection you'll need a custom getConnected aswell
-	 * @return mixed
-	 */
-	static function registerConnection($targetPostType, $parameters = array())
+    /**
+     * @static Creates a p2p connection to another post type
+     * @param string $targetPostType The post_type of the post type you want to connect to
+     * @param array $parameters These can overwrite the defaults. Do not specify connection_name, use $connectionName instead
+     * @param string $connectionName
+     * @return mixed
+     */
+	static function registerConnection($targetPostType, $parameters = array(), $connectionName = null)
 	{
-		return PostTypeManager::get()->registerConnection(self::postType(), $targetPostType, $parameters);
+		return PostTypeManager::get()->registerConnection(self::postType(), $targetPostType, $parameters, $connectionName);
 	}
 
 	/**
