@@ -45,22 +45,7 @@ class PostTypeManager
             return;
         }
 		if ($postType !== 'page' && $postType !== 'post' && $postType !== 'attachment' ) {
-			$defaults = array(
-				'labels' => AdminUtils::generateLabels($className::friendlyName(), $className::friendlyNamePlural()),
-				'public' => true,
-				'has_archive' => true,
-				'rewrite' => array(
-					'slug' => $postType,
-					'with_front' => false
-				),
-				'show_ui' => true,
-				'supports' => array(
-					'title',
-					'editor',
-					'revisions',
-				)
-			);
-			$registrationArgs = $className::getRegistrationArgs($defaults);
+			$registrationArgs = $className::getRegistrationArgs();
 			register_post_type($postType, $registrationArgs);
 		}
 

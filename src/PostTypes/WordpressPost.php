@@ -814,11 +814,25 @@ abstract class WordpressPost
 	/**
 	 * @static
 	 * Called by register(), for registering this post type
-	 * @param $defaults
 	 * @return mixed array of arguments used by register_post
 	 */
-	static function getRegistrationArgs($defaults) {
-		return $defaults;
+	static function getRegistrationArgs() {
+	    return array(
+            'labels' => AdminUtils::generateLabels(static::friendlyName(), static::friendlyNamePlural()),
+            'public' => true,
+            'has_archive' => true,
+            'rewrite' => array(
+                'slug' => static::postType(),
+                'with_front' => false
+            ),
+            'show_ui' => true,
+            'show_in_rest' => true,
+            'supports' => array(
+                'title',
+                'editor',
+                'revisions',
+            )
+        );
 	}
 
 	/**
