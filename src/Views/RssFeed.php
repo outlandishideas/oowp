@@ -41,8 +41,8 @@ class RssFeed extends OowpView
         <title><?php echo $title; ?></title>
         <description><?php echo $description; ?></description>
         <link><?php echo $this->url; ?></link>
-        <lastBuildDate><?php date('D, d M Y H:i:s T'); ?></lastBuildDate>
-        <pubDate><?php date('D, d M Y H:i:s T'); ?></pubDate>
+        <lastBuildDate><?php echo date('D, d M Y H:i:s T'); ?></lastBuildDate>
+        <pubDate><?php echo date('D, d M Y H:i:s T'); ?></pubDate>
         <ttl>1800</ttl>
 <?php
     }
