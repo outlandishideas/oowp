@@ -25,8 +25,14 @@ class AdminUtils
       return $args;
     }, 10, 2);
 
-    // prevent users accessing the post-new.php page for disabled post types
+    // prevent users accessing the post-new.php and edit.php pages for disabled post types
     add_action('load-post-new.php', function() use ($disabledPostTypes) {
+      $postType = get_current_screen()->post_type;
+      if (in_array($postType, $disabledPostTypes)) {
+        wp_die('Invalid post type');
+      }
+    });
+    add_action('load-edit.php', function() use ($disabledPostTypes) {
       $postType = get_current_screen()->post_type;
       if (in_array($postType, $disabledPostTypes)) {
         wp_die('Invalid post type');
