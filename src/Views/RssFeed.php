@@ -9,14 +9,10 @@ class RssFeed extends OowpView
 {
     /** @var WordpressPost[]|OowpQuery */
     public $items;
-    /** @var string Used in $description and $title, if not otherwise supplied */
+    /** @var string */
     public $name;
     /** @var string */
     public $url;
-    /** @var string */
-    public $description;
-    /** @var string */
-    public $title;
 
     public function render($args = [])
     {
@@ -24,35 +20,21 @@ class RssFeed extends OowpView
         ?>
         <rss version="2.0">
             <channel>
+                <title><?php echo $this->name; ?> latest updates</title>
+                <description>Latest news from <?php echo $this->name; ?> </description>
+                <link><?php echo $this->url; ?></link>
+                <lastBuildDate><?php date('D, d M Y H:i:s T'); ?></lastBuildDate>
+                <pubDate><?php date('D, d M Y H:i:s T'); ?></pubDate>
+                <ttl>1800</ttl>
                 <?php
-                $this->renderSiteInfo();
-                $this->renderItems();
+                $view = new RssItem();
+                foreach($this->items as $item) {
+                    $view->post = $item;
+                    $view->render();
+                }
                 ?>
             </channel>
         </rss>
         <?php
-    }
-
-    protected function renderSiteInfo()
-    {
-        $description = $this->description ?: "Latest news from {$this->name}";
-        $title = $this->title ?: "{$this->name} latest updates";
-?>
-        <title><?php echo $title; ?></title>
-        <description><?php echo $description; ?></description>
-        <link><?php echo $this->url; ?></link>
-        <lastBuildDate><?php echo date('D, d M Y H:i:s T'); ?></lastBuildDate>
-        <pubDate><?php echo date('D, d M Y H:i:s T'); ?></pubDate>
-        <ttl>1800</ttl>
-<?php
-    }
-
-    protected function renderItems()
-    {
-        $view = new RssItem();
-        foreach($this->items as $item) {
-            $view->post = $item;
-            $view->render();
-        }
     }
 }

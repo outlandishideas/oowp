@@ -97,13 +97,6 @@ abstract class WordpressPost
 	}
 
 	/**
-	 * Return the underlying WP_Post
-	 */
-	public function get_post() {
-	    return $this->post;
-        }
-
-	/**
 	 * Override this to hook into the save event. This is called with low priority so
 	 * all fields should be already saved
 	 */

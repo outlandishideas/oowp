@@ -10,105 +10,87 @@ class AdminUtils
 	/** @var WordpressPost[] */
 	static $customColumnsCache = [];
 
-  /**
-   * Customises admin UI
-   */
-  static function customiseAdmin()
-  {
-    $disabledPostTypes = apply_filters('oowp_disabled_post_types', ['post']);
+	/**
+	 * @param string[] $postTypes Keys are registered WordpressPost class names
+	 */
+	static function customiseAdmin($postTypes)
+	{
+		// wordpress 3.5 makes unregister_post_type cause errors later on, so just hide the item in the menu instead
+//	unregister_post_type('post');
+		add_action('admin_menu', function() {
+			remove_menu_page('edit.php');
+		});
 
-    // make disabled post types private (can't remove them entirely)
-    add_action('register_post_type_args', function ($args, $postType) use ($disabledPostTypes) {
-      if (in_array($postType, $disabledPostTypes)) {
-        $args['public'] = false;
-      }
-      return $args;
-    }, 10, 2);
+//	oowp_unregister_taxonomy('category');
+//	oowp_unregister_taxonomy('post_tag');
 
-    // prevent users accessing the post-new.php and edit.php pages for disabled post types
-    add_action('load-post-new.php', function() use ($disabledPostTypes) {
-      $postType = get_current_screen()->post_type;
-      if (in_array($postType, $disabledPostTypes)) {
-        wp_die('Invalid post type');
-      }
-    });
-    add_action('load-edit.php', function() use ($disabledPostTypes) {
-      $postType = get_current_screen()->post_type;
-      if (in_array($postType, $disabledPostTypes)) {
-        wp_die('Invalid post type');
-      }
-    });
+        $publicDir = plugin_dir_url(realpath(__DIR__ . '/../../public') . '/fake.txt');
+		if (is_admin()) {
+			add_action('admin_head', function() use ($postTypes) {
+				self::addAdminStyles($postTypes);
+			});
+			add_action('admin_menu', function() {
+				remove_menu_page('link-manager.php');
+			});
+			wp_enqueue_script('oowp_admin_js', $publicDir . '/oowp-admin.js', array('jquery'), false, true);
+			wp_enqueue_style('oowp_admin_css', $publicDir . '/oowp-admin.css');
+		} else {
+			wp_enqueue_style('oowp_css', $publicDir . '/oowp.css');
+		}
 
-    add_action('oowp/all_post_types_registered', function ($postTypes) {
-      $publicDir = plugin_dir_url(realpath(__DIR__ . '/../../public') . '/fake.txt');
-      if (is_admin()) {
-        add_action('admin_head', function () use ($postTypes) {
-          self::addAdminStyles($postTypes);
-        });
-        add_action('admin_menu', function () {
-          remove_menu_page('link-manager.php');
-        });
-        wp_enqueue_script('oowp_admin_js', $publicDir . '/oowp-admin.js', array('jquery'), false, true);
-        wp_enqueue_style('oowp_admin_css', $publicDir . '/oowp-admin.css');
-      } else {
-        wp_enqueue_style('oowp_css', $publicDir . '/oowp.css');
-      }
+		foreach ($postTypes as $className => $postType) {
+			/** @var WordpressPost $className */
 
-      foreach ($postTypes as $className => $postType) {
-        /** @var string $postType */
-        /** @var WordpressPost $className Actually a class name string, but we're using static methods on those classes */
+			// add any custom columns
+			add_filter("manage_edit-{$postType}_columns", function($defaults) use ($className) {
+				if (isset($_GET['post_status']) && $_GET['post_status'] == 'trash') {
+					return $defaults;
+				} else {
+					$helper = new ArrayHelper($defaults);
+					$className::addCustomAdminColumns($helper);
+					return $helper->array;
+				}
+			});
 
-        // add any custom columns
-        add_filter("manage_edit-{$postType}_columns", function ($defaults) use ($className) {
-          if (isset($_GET['post_status']) && $_GET['post_status'] == 'trash') {
-            return $defaults;
-          } else {
-            $helper = new ArrayHelper($defaults);
-            $className::addCustomAdminColumns($helper);
-            return $helper->array;
-          }
-        });
+			// populate the custom columns for each post
+			add_action("manage_{$postType}_posts_custom_column", function($column, $post_id) use ($className) {
+				// cache each post, to avoid re-fetching
+				if (!isset(self::$customColumnsCache[$post_id])) {
+					$status = empty($_GET['post_status']) ? 'publish' : $_GET['post_status'];
+					$query = new OowpQuery(array('p'=>$post_id, 'posts_per_page'=>1, 'post_status'=>$status));
+					self::$customColumnsCache[$post_id] = ($query->post_count ? $query->post : null);
+				}
+				if (self::$customColumnsCache[$post_id]) {
+					echo self::$customColumnsCache[$post_id]->getCustomAdminColumnValue($column);
+				}
+			}, 10, 2);
+		}
 
-        // populate the custom columns for each post
-        add_action("manage_{$postType}_posts_custom_column", function ($column, $post_id) use ($className) {
-          // cache each post, to avoid re-fetching
-          if (!isset(self::$customColumnsCache[$post_id])) {
-            $status = empty($_GET['post_status']) ? 'publish' : $_GET['post_status'];
-            $query = new OowpQuery(array('p' => $post_id, 'posts_per_page' => 1, 'post_status' => $status));
-            self::$customColumnsCache[$post_id] = ($query->post_count ? $query->post : null);
-          }
-          if (self::$customColumnsCache[$post_id]) {
-            echo self::$customColumnsCache[$post_id]->getCustomAdminColumnValue($column);
-          }
-        }, 10, 2);
-      }
+		// append the count(s) to the end of the 'at a glance' box on the dashboard
+		add_action('dashboard_glance_items', function($items) use ($postTypes) {
+			foreach ($postTypes as $className => $postType) {
+				/** @var WordpressPost $className */
+				if ($postType != 'post' && $postType != 'page') {
+					$singular = $className::friendlyName();
+					$plural = $className::friendlyNamePlural();
 
-      // append the count(s) to the end of the 'at a glance' box on the dashboard
-      add_action('dashboard_glance_items', function ($items) use ($postTypes) {
-        foreach ($postTypes as $className => $postType) {
-          /** @var WordpressPost $className */
-          if ($postType != 'post' && $postType != 'page') {
-            $singular = $className::friendlyName();
-            $plural = $className::friendlyNamePlural();
+					$numPosts = wp_count_posts($postType);
+					$postTypeObject = get_post_type_object($postType);
 
-            $numPosts = wp_count_posts($postType);
-            $postTypeObject = get_post_type_object($postType);
-
-            if ($postTypeObject->show_ui) {
-              $count = $numPosts->publish;
-              $text = number_format_i18n($count) . ' ' . _n($singular, $plural, intval($count));
-              if (current_user_can('edit_posts')) {
-                $icon = $postTypeObject->menu_icon ? '<span class="dashicons ' . $postTypeObject->menu_icon . '"></span>' : '';
-                $iconSuffix = $icon ? 'icon' : 'no-icon';
-                $items[] = "<div class='post-type-{$iconSuffix} {$postType}-count'>{$icon}<a href='edit.php?post_type={$postType}'>$text</a></div>";
-              }
-            }
-          }
-        }
-        return $items;
-      });
-    });
-  }
+					if ($postTypeObject->show_ui) {
+						$count = $numPosts->publish;
+						$text = number_format_i18n($count) . ' ' . _n($singular, $plural, intval($count) );
+						if ( current_user_can( 'edit_posts' )) {
+							$icon = $postTypeObject->menu_icon ? '<span class="dashicons ' . $postTypeObject->menu_icon . '"></span>' : '';
+							$iconSuffix = $icon ? 'icon' : 'no-icon';
+							$items[] = "<div class='post-type-{$iconSuffix} {$postType}-count'>{$icon}<a href='edit.php?post_type={$postType}'>$text</a></div>";
+						}
+					}
+				}
+			}
+			return $items;
+		});
+	}
 
 	/**
 	 * Attempts to style each post type menu item and posts page with its own custom image icon, as found in the

@@ -30,6 +30,55 @@ foreach(ooPlace::fetchAll() as $place){
 Nice isn't it? If it's not nice and makes no sense whatsoever to you then you should either learn about object-oriented PHP (definitely a good idea) or look elsewhere (we won't be offended).
 
 
+## Theme structure
+
+At Outlandish we use Bedrock to structure our projects and we recommend you do the same. It produces a folder structure like this:
+
+    .
+    ├── composer.json             # → Manage versions of WordPress, plugins & dependencies
+    ├── config                    # → WordPress configuration files
+    ├── vendor                    # → Composer packages (never edit)
+    └── web                       # → Web root (vhost document root)
+        ├── app                   # → wp-content equivalent
+        │   ├── mu-plugins        # → Must use plugins
+        │   ├── plugins           # → Plugins
+        │   ├── themes            # → Themes - see below
+        │   └── uploads           # → Uploads
+        └── wp                    # → WordPress core (never edit)
+
+> See the [Bedrock documentation](https://roots.io/bedrock/docs/folder-structure/) for more detail.
+
+We structure our theme folders  like this:
+
+    .
+    └── web                         # → Web root (vhost document root)
+        ├── app                     # → wp-content equivalent
+        │   ├── themes              # → Themes 
+        │   │   ├── sample-theme    # → An oowp-structured theme
+        │   │   │   ├── assets      # → For static assets
+        │   │   │   │   ├── fonts   # → webfont files
+        │   │   │   │   ├── img     # → images used in the theme
+        │   │   │   │   ├── js      # → the Javascript for the project which is minified and moved to ../public using a filewatcher
+        │   │   │   │   ├── scss    # → SCSS which is transpiled into CSS and moved to the ../public folder using a filewatcher
+        │   │   │   ├── public      # → Where assets from ../assets get built to by gulp scripts
+        │   │   │   ├── src         # → The main theme files
+        │   │   │   │   ├── PostTypes           # → For 'model' classes that represent custom post types 
+        │   │   │   │   │   ├── BasePost.php    # → An abstract base post that contains functionality common to all the post types in this project (we often have more complex class hierarchies for, for example, hierarhical and non-hierarchical post-tyeps)
+        │   │   │   │   │   ├── Blog.php        # → An outer 'layout' file that usually contains the header and footer and which is wrapped around the other views
+        │   │   │   │   │   ├── Author.php      # → An outer 'layout' file that usually contains the header and footer and which is wrapped around the other views
+        │   │   │   │   │   ├── ...             # → We often have five or more custom post types
+        │   │   │   │   ├── Router              # → For 'controllers' that route URLs to responses via the relevant models and views
+        │   │   │   │   │   ├── Router.php      # → The file which contains the mapping of routes (URL patterns) to controller functions that will generate and return a reponse
+        │   │   │   │   ├── Views               # → For 'view' classes that subclass the OowpView or RoutemasterOowpView class
+        │   │   │   │   │   ├── Components      # → For smaller templates that make up larger views
+        │   │   │   │   │   ├── Layout.php      # → An outer 'layout' file that usually contains the header and footer and which is wrapped around the other views
+        │   │   │   │   │   ├── DefaultPostView.php       # → A view that will be used to render single posts where no other template is defined
+        │   │   │   │   │   ├── Layout.php      # → A view that will be used to render index/listing pages such as the homepage, blog index or category archive
+        └────────────────────
+        
+
+        
+        
 ## Install
 Whack it in WordPress's plugins directory and hack away at it until it works. Or wait until we create some better instructions.
 
