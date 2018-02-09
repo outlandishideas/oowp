@@ -99,8 +99,18 @@ abstract class WordpressPost
 	/**
 	 * Return the underlying WP_Post
 	 */
-	public function get_post() {
+	public function get_post()
+    {
 	    return $this->post;
+    }
+
+    /**
+     * Sets the underlying WP_Post as the global post
+     */
+    public function setAsGlobal()
+    {
+        global $post;
+        $post = $this->get_post();
     }
 
 	/**
