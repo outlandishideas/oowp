@@ -9,9 +9,7 @@ Version: 0.9
 use Outlandish\Wordpress\Oowp\Shortcodes\ListPostsShortcode;
 use Outlandish\Wordpress\Oowp\Util\AdminUtils;
 
-add_action('oowp/all_post_types_registered', function($postTypes) {
-	AdminUtils::customiseAdmin($postTypes);
-});
+AdminUtils::customiseAdmin();
 
 if (!function_exists('unregister_post_type')) {
 	function unregister_post_type($post_type)
