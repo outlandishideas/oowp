@@ -4,7 +4,7 @@
   "description": "A plugin for WordPress that makes post types easier to manage",
   "minimum-stability": "stable",
   "license": "GPL-3.0",
-  "version": "2.1.1",
+  "version": "2.2.1",
   "autoload": {
     "psr-4": {
       "Outlandish\\Wordpress\\Oowp\\": "src/"
