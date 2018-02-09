@@ -6,6 +6,7 @@ use Outlandish\Wordpress\Oowp\WordpressTheme;
 
 abstract class OowpView
 {
+    /** @var WordpressTheme */
     public $theme;
 
     public function __construct($args = [])
