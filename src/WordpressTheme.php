@@ -37,11 +37,21 @@ class WordpressTheme {
     }
 
     /*
+     * Gets the URL for wordpress files, e.g. wp-blog-header.php
+     * For public URLs, use homeURL()
      * No trailing slash as standard (http://www.example.com), if trailing slash is required, include as first argument, ($a = '/')
      * second argument returns protocol for the url (http, https, etc) - see http://codex.wordpress.org/Function_Reference/site_url for more info
      */
     public function siteURL($relativePath = '') {
         return site_url(null, null) . '/' . ltrim($relativePath, '/');
+    }
+
+    /*
+     * No trailing slash as standard (http://www.example.com), if trailing slash is required, include as first argument, ($a = '/')
+     * second argument returns protocol for the url (http, https, etc) - see http://codex.wordpress.org/Function_Reference/site_url for more info
+     */
+    public function homeURL($relativePath = '') {
+        return home_url(null, null) . '/' . ltrim($relativePath, '/');
     }
 
 	/**

@@ -11,19 +11,35 @@ class AdminUtils
 	static $customColumnsCache = [];
 
 	/**
-	 * @param string[] $postTypes Keys are registered WordpressPost class names
+   * Customises admin UI
 	 */
-	static function customiseAdmin($postTypes)
+  static function customiseAdmin()
 	{
-		// wordpress 3.5 makes unregister_post_type cause errors later on, so just hide the item in the menu instead
-//	unregister_post_type('post');
-		add_action('admin_menu', function() {
-			remove_menu_page('edit.php');
+    $disabledPostTypes = apply_filters('oowp_disabled_post_types', ['post']);
+
+    // make disabled post types private (can't remove them entirely)
+    add_action('register_post_type_args', function ($args, $postType) use ($disabledPostTypes) {
+      if (in_array($postType, $disabledPostTypes)) {
+        $args['public'] = false;
+      }
+      return $args;
+    }, 10, 2);
+
+    // prevent users accessing the post-new.php and edit.php pages for disabled post types
+    add_action('load-post-new.php', function() use ($disabledPostTypes) {
+      $postType = get_current_screen()->post_type;
+      if (in_array($postType, $disabledPostTypes)) {
+        wp_die('Invalid post type');
+      }
+    });
+    add_action('load-edit.php', function() use ($disabledPostTypes) {
+      $postType = get_current_screen()->post_type;
+      if (in_array($postType, $disabledPostTypes)) {
+        wp_die('Invalid post type');
+      }
 		});
 
-//	oowp_unregister_taxonomy('category');
-//	oowp_unregister_taxonomy('post_tag');
-
+    add_action('oowp/all_post_types_registered', function ($postTypes) {
         $publicDir = plugin_dir_url(realpath(__DIR__ . '/../../public') . '/fake.txt');
 		if (is_admin()) {
 			add_action('admin_head', function() use ($postTypes) {
@@ -39,7 +55,8 @@ class AdminUtils
 		}
 
 		foreach ($postTypes as $className => $postType) {
-			/** @var WordpressPost $className */
+        /** @var string $postType */
+        /** @var WordpressPost $className Actually a class name string, but we're using static methods on those classes */
 
 			// add any custom columns
 			add_filter("manage_edit-{$postType}_columns", function($defaults) use ($className) {
@@ -90,6 +107,7 @@ class AdminUtils
 			}
 			return $items;
 		});
+    });
 	}
 
 	/**
