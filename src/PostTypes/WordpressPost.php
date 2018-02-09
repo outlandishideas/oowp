@@ -442,21 +442,43 @@ abstract class WordpressPost
 	/**
 	 * @return WordpressPost|null Get parent of post (or post type)
 	 */
-	public function parent() {
-		$parentId = !empty($this->post_parent) ? $this->post_parent : static::postTypeParentId();
-		if (empty($parentId)) {
+	public function parent()
+  {
+    $parentId = $this->post_parent;
+    if (!$parentId) {
+      $parentId = static::postTypeParentId();
+    }
+    $parentSlug = static::postTypeParentSlug();
+		if (empty($parentId) && empty($parentSlug)) {
 			return null;
 		}
-		return $this->getCacheValue() ?: $this->setCacheValue(WordpressPost::fetchById($parentId));
+
+		$parent = $this->getCacheValue();
+		if (!$parent) {
+		  $parent = $parentId ? WordpressPost::fetchById($parentId) : WordpressPost::fetchBySlug($parentSlug);
+      $this->setCacheValue($parent);
+    }
+    return $parent;
 	}
 
 	/**
-	 * @static
-	 * @return int returns the root parent type for posts.
-	 * If parent of a hierarchical post type is a page, for example, this needs to be set to that ID
+   * If the parent of a hierarchical post type is a page, for example, this needs to be set to that ID.
+   * Is mutually exclusive with postTypeParentSlug (this takes priority)
+	 * @return int The ID of the parent post for this post type.
 	 */
-	public static function postTypeParentId(){
+	public static function postTypeParentId()
+  {
 		return 0;
+	}
+
+	/**
+   * If the parent of a hierarchical post type is a page, for example, this needs to be set to that slug
+   * Is mutually exclusive with postTypeParentId (that takes priority)
+	 * @return string The slug of the parent post for this post type.
+	 */
+	public static function postTypeParentSlug()
+  {
+		return '';
 	}
 
 	/**
@@ -555,7 +577,7 @@ abstract class WordpressPost
 	}
 
 	/**
-	 * @return array Class names of WordpressPost types having this object as their parent
+	 * @return array Class names of WordpressPost types having this post as their parent
 	 */
 	public function childPostClassNames()
 	{
@@ -563,7 +585,7 @@ abstract class WordpressPost
 		$names = array();
 		foreach ($manager->getPostTypes() as $postType) {
 			$class = $manager->getClassName($postType);
-			if ($class::postTypeParentId() == $this->ID) {
+			if ($class::postTypeParentId() == $this->ID || $class::postTypeParentSlug() == $this->post_name) {
 				$names[] = $class;
 			}
 		}
@@ -760,7 +782,7 @@ abstract class WordpressPost
 	 */
 	public function isCurrentPageParent() {
 		$x = WordpressPost::getQueriedObject();
-		return (isset($x) && ($x->post_parent == $this->ID || $x->postTypeParentId() == $this->ID));
+		return (isset($x) && ($x->post_parent == $this->ID || $x->postTypeParentId() == $this->ID || $x->postTypeParentSlug() == $this->post_name));
 	}
 
 	/**
