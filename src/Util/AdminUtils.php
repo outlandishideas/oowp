@@ -73,7 +73,7 @@ class AdminUtils
 			add_action("manage_{$postType}_posts_custom_column", function($column, $post_id) use ($className) {
 				// cache each post, to avoid re-fetching
 				if (!isset(self::$customColumnsCache[$post_id])) {
-					$status = empty($_GET['post_status']) ? 'publish' : $_GET['post_status'];
+					$status = empty($_GET['post_status']) ? '' : $_GET['post_status'];
 					$query = new OowpQuery(array('p'=>$post_id, 'posts_per_page'=>1, 'post_status'=>$status));
 					self::$customColumnsCache[$post_id] = ($query->post_count ? $query->post : null);
 				}
