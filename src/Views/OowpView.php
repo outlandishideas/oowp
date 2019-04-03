@@ -21,8 +21,7 @@ abstract class OowpView
     {
         ob_start();
         $this->render($args);
-        $html = ob_get_contents();
-        ob_end_flush();
+        $html = ob_get_clean();
         return $html;
     }
 
