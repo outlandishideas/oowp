@@ -121,9 +121,9 @@ abstract class WordpressPost
 		// do nothing
 	}
 
-    /**
-     * Override this to hook into the before_delete event.
-     */
+	/**
+	 * Override this to hook into the before_delete event.
+	 */
 	public function onDelete() {
 		// do nothing
 	}
