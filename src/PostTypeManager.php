@@ -87,12 +87,16 @@ class PostTypeManager
 			$className::onRegistrationComplete();
 		}
 
-		// add hook for posts to modify data before it is saved
+		// add hook for posts to deal with data after it is saved
 		add_filter('save_post', function($postId, $postData) {
 			if ($postData) {
 				$postType = $postData->post_type;
 				if (in_array($postType, $this->postTypes)) {
-					$post = WordpressPost::fetchById($postId);
+                    $post = WordpressPost::fetchOne([
+                        'p' => $postId,
+                        'post_type' => $postType,
+                        'post_status' => $postData->post_status
+                    ]);
 					if ($post) {
 						$post->onSave($postData);
 					}
