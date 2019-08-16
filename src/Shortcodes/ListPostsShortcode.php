@@ -11,8 +11,9 @@ class ListPostsShortcode
     /**
      * Shortcode that allows access to the basic fetchAll functionality through the CMS
      * Example: [oowp_list_posts type='event' posts_per_page=3]
-     * @param $params
-     * @param $content
+     *
+     * @param array $params
+     * @param mixed $content
      */
     static function apply($params, $content) {
         $postType = $params['type']; //what kind of post are we querying
@@ -23,9 +24,9 @@ class ListPostsShortcode
         if(!$manager->postTypeIsRegistered($postType)){
             if(defined('WP_DEBUG') && WP_DEBUG) {
                 die('OOWP shortcode error: unknown post-type ('.$postType.')');
-            } else {
-                return;
             }
+
+            return;
         }
         //ok - we know it's a valid post type
 

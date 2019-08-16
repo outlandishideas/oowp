@@ -70,7 +70,7 @@ class AdminUtils
 			});
 
 			// populate the custom columns for each post
-			add_action("manage_{$postType}_posts_custom_column", function($column, $post_id) use ($className) {
+			add_action("manage_{$postType}_posts_custom_column", function($column, $post_id) {
 				// cache each post, to avoid re-fetching
 				if (!isset(self::$customColumnsCache[$post_id])) {
 					$status = empty($_GET['post_status']) ? '' : $_GET['post_status'];

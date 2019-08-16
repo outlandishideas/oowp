@@ -56,7 +56,7 @@ abstract class WordpressPost
 #region Getters, Setters, Construct, Init
 
 	/**
-	 * @param $data int | array | object
+	 * @param int|array|object $data
 	 */
 	public function __construct($data)
 	{
@@ -67,6 +67,7 @@ abstract class WordpressPost
 	/**
 	 * Converts the data into an internal wordpress (WP_Post) post object
 	 * @static
+	 *
 	 * @param mixed $data
 	 * @return \WP_Post|WordpressPost
 	 */
@@ -74,18 +75,21 @@ abstract class WordpressPost
 	{
 		if (is_array($data)) {
 			return new \WP_Post((object)$data);
-		} else if (is_object($data) && $data instanceof \WP_Post) {
-			return $data;
-		} else if (is_object($data)) {
-			return new \WP_Post($data);
-		} else if (is_numeric($data) && is_integer($data+0)) {
-			return get_post($data);
-		} else {
-			//TODO: should this throw an exception instead?
-			//this is the only way this can return a WordpressPost object
-			global $post;
-			return $post;
 		}
+		if (is_object($data) && $data instanceof \WP_Post) {
+			return $data;
+		}
+		if (is_object($data)) {
+			return new \WP_Post($data);
+		}
+		if (is_numeric($data) && is_integer($data + 0)) {
+			return get_post($data);
+		}
+
+		//TODO: should this throw an exception instead?
+		//this is the only way this can return a WordpressPost object
+		global $post;
+		return $post;
 	}
 
 	/**
@@ -123,6 +127,7 @@ abstract class WordpressPost
 
 	/**
 	 * Proxy magic properties to WP_Post
+	 *
 	 * @param string $name
 	 * @return mixed
 	 */
@@ -132,6 +137,7 @@ abstract class WordpressPost
 
 	/**
 	 * Proxy magic properties to WP_Post
+	 *
 	 * @param string $name
 	 * @param mixed $value
 	 * @return mixed
@@ -142,6 +148,7 @@ abstract class WordpressPost
 
 	/**
 	 * Proxy magic properties to WP_Post
+	 *
 	 * @param string $name
 	 * @return mixed
 	 */
@@ -151,6 +158,7 @@ abstract class WordpressPost
 
 	/**
 	 * Gets the cached value for the function that called this
+	 *
 	 * @return mixed
 	 */
 	protected function getCacheValue() {
@@ -160,7 +168,8 @@ abstract class WordpressPost
 
 	/**
 	 * Sets and returns the cached value for the function that called this
-	 * @param $value
+	 *
+	 * @param mixed $value
 	 * @return mixed
 	 */
 	protected function setCacheValue($value) {
@@ -176,7 +185,8 @@ abstract class WordpressPost
 
 	/**
 	 * @static
-	 * @return string the post name for this class, derived from the classname
+	 *
+	 * @return string The post name for this class, derived from the classname
 	 */
 	public static function postType()
 	{
@@ -202,7 +212,8 @@ abstract class WordpressPost
 
 	/**
 	 * @static
-	 * @return string - the human-friendly name of this class, derived from the post name
+	 *
+	 * @return string The human-friendly name of this class, derived from the post name
 	 */
 	public static function friendlyName() {
 		return ucwords(str_replace('_', ' ', static::postType()));
@@ -210,14 +221,15 @@ abstract class WordpressPost
 
 	/**
 	 * @static
-	 * @return string - the human-friendly name of this class, derived from the post name
+	 *
+	 * @return string The human-friendly name of this class, derived from the post name
 	 */
 	public static function friendlyNamePlural() {
 		return static::friendlyName() . 's';
 	}
 
 	/**
-	 * @param $posts array Array of posts/post ids
+	 * @param array $posts Array of posts/post ids
 	 */
 	public function connectAll($posts) {
 		foreach ($posts as $post) {
@@ -226,7 +238,7 @@ abstract class WordpressPost
 	}
 
     /**
-     * @param $post int|object|WordpressPost
+     * @param int|object|WordpressPost $post
      * @param array $meta
      * @param string $connectionName
      */
@@ -249,9 +261,9 @@ abstract class WordpressPost
 
     /**
      * @param string|string[] $targetPostType e.g. post, event - the type of connected post(s) you want
-     * @param bool $single - just return the first/only post?
-     * @param array $queryArgs - augment or overwrite the default parameters for the WP_Query
-     * @param bool $hierarchical - if this is true the the function will return any post that is connected to this post *or any of its descendants*
+     * @param bool $single Just return the first/only post?
+     * @param array $queryArgs Augment or overwrite the default parameters for the WP_Query
+     * @param bool $hierarchical If this is true the the function will return any post that is connected to this post *or any of its descendants*
      * @param string|string[] $connectionName If specified, only this connection name is used to find the connected posts (defaults to any/all connections to $targetPostType)
      * @return null|OowpQuery|WordpressPost
      */
@@ -399,6 +411,7 @@ abstract class WordpressPost
 
 	/**
 	 * Sets the metadata with the given key for the post
+	 *
 	 * @param string $key
 	 * @param mixed $value
 	 */
@@ -413,6 +426,7 @@ abstract class WordpressPost
 
 	/**
 	 * Deletes the metadata with the given key for the post
+	 *
 	 * @param string $key
 	 */
 	public function deleteMetadata($key)
@@ -453,7 +467,7 @@ abstract class WordpressPost
 	 * @return WordpressPost|null Get parent of post (or post type)
 	 */
 	public function parent()
-  {
+	{
     $parentId = $this->post_parent;
     if (!$parentId) {
       $parentId = static::postTypeParentId();
@@ -472,22 +486,24 @@ abstract class WordpressPost
 	}
 
 	/**
-   * If the parent of a hierarchical post type is a page, for example, this needs to be set to that ID.
-   * Is mutually exclusive with postTypeParentSlug (this takes priority)
+	 * If the parent of a hierarchical post type is a page, for example, this needs to be set to that ID.
+	 * Is mutually exclusive with postTypeParentSlug (this takes priority)
+	 *
 	 * @return int The ID of the parent post for this post type.
 	 */
 	public static function postTypeParentId()
-  {
+	{
 		return 0;
 	}
 
 	/**
-   * If the parent of a hierarchical post type is a page, for example, this needs to be set to that slug
-   * Is mutually exclusive with postTypeParentId (that takes priority)
+	 * If the parent of a hierarchical post type is a page, for example, this needs to be set to that slug
+	 * Is mutually exclusive with postTypeParentId (that takes priority)
+	 *
 	 * @return string The slug of the parent post for this post type.
 	 */
 	public static function postTypeParentSlug()
-  {
+	{
 		return '';
 	}
 
@@ -559,6 +575,7 @@ abstract class WordpressPost
 	 * the root posts of any post_types whose declared postTypeParentId is this post.
 	 * Add 'post_type' to query args to only return certain post types for children
 	 * Add 'post__not_in' to query args to exclude certain pages based on id.
+	 *
 	 * @param array $queryArgs
 	 * @return WordpressPost[]|OowpQuery
 	 */
@@ -626,6 +643,7 @@ abstract class WordpressPost
 	/**
 	 * Executes a wordpress function, setting $this as the global $post first, then resets the global post data.
 	 * Expects the first argument to be the function, followed by any arguments
+	 *
 	 * @return mixed
 	 */
 	protected function callGlobalPost()
@@ -654,7 +672,8 @@ abstract class WordpressPost
 
 	/**
 	 * Gets the url for editing this post. Returns blank if $requireLoggedIn is true and the logged-in user doesn't have the right permissions
-	 * @param $requireLoggedIn
+	 *
+	 * @param bool $requireLoggedIn
 	 * @return string
 	 */
 	public function editUrl($requireLoggedIn = false) {
@@ -675,6 +694,7 @@ abstract class WordpressPost
 	 *     $attachment->generatePdfImage();
 	 * });
 	 * IMPORTANT!!! in php-fpm.conf, the env[PATH] = /usr/local/bin:/usr/bin:/bin needs to be uncommented for this to work
+	 *
 	 * @param string $extension
 	 * @param string $namePrefix
 	 * @param bool $logDebug
@@ -755,9 +775,11 @@ abstract class WordpressPost
 	}
 
 	/**
-	 * @static turns and array of key=>value attibutes into html string
+	 * Turns an array of key=>value attibutes into html string
+	 * @static
+	 *
 	 * @param array $attrs  key=>value attributes
-	 * @return string html for including in an element
+	 * @return string HTML for including in an element
 	 */
 	public static function getAttributeString($attrs){
 		$attributeString = '';
@@ -863,7 +885,8 @@ abstract class WordpressPost
 	/**
 	 * @static
 	 * Called by register(), for registering this post type
-	 * @return mixed array of arguments used by register_post
+	 *
+	 * @return array Array of arguments used by register_post
 	 */
 	static function getRegistrationArgs() {
 	    return array(
@@ -886,13 +909,15 @@ abstract class WordpressPost
 
 	/**
 	 * Use this in combination with getCustomAdminColumnValue to add custom columns to the wp admin interface for the post.
-	 * @param $helper ArrayHelper Contains the default columns
 	 * @static
+	 *
+	 * @param ArrayHelper $helper Contains the default columns
 	 */
 	static function addCustomAdminColumns(ArrayHelper $helper) { /* do nothing */ }
 
 	/**
 	 * Use this in combination with addCustomAdminColumns to get the column value for a post
+	 *
 	 * @param string $column The name of the column, as given in addCustomAdminColumns
 	 * @return string
 	 */
@@ -902,8 +927,9 @@ abstract class WordpressPost
 	}
 
 	/**
-	 * @static
 	 * Gets the queried object (i.e. the post/page currently being viewed)
+	 * @static
+	 *
 	 * @return null|WordpressPost
 	 */
 	static function getQueriedObject() {
@@ -918,6 +944,7 @@ abstract class WordpressPost
 
     /**
      * @static Creates a p2p connection to another post type
+     *
      * @param string $targetPostType The post_type of the post type you want to connect to
      * @param array $parameters These can overwrite the defaults. Do not specify connection_name, use $connectionName instead
      * @param string $connectionName
@@ -931,6 +958,7 @@ abstract class WordpressPost
 	/**
 	 * Factory method for creating a post of the appropriate WordpressPost subclass, for the given data
 	 * @static
+	 *
 	 * @param object|int $data
 	 * @return WordpressPost|null
 	 */
@@ -958,7 +986,8 @@ abstract class WordpressPost
 	/**
 	 * Factory method for creating a post of the appropriate WordpressPost subclass, for the given post ID
 	 * @static
-	 * @param $ids int|int[]
+	 *
+	 * @param int|int[] $ids
 	 * @return WordpressPost|OowpQuery|null
 	 */
 	public static function fetchById($ids) {
@@ -981,7 +1010,8 @@ abstract class WordpressPost
 
 	/**
 	 * @static
-	 * @param array $queryArgs - accepts a wp_query $queryArgs array which overwrites the defaults
+	 *
+	 * @param array $queryArgs Accepts a wp_query $queryArgs array which overwrites the defaults
 	 * @return OowpQuery
 	 */
 	public static function fetchAll($queryArgs = array())
@@ -1010,6 +1040,7 @@ abstract class WordpressPost
 
 	/**
 	 * @static
+	 *
 	 * @return null|WordpressPost
 	 */
 	static function fetchHomepage() {
@@ -1022,7 +1053,7 @@ abstract class WordpressPost
 	}
 
 	/**
-	 * @return bool true if this is the site homepage
+	 * @return bool True if this is the site homepage
 	 */
 	public function isHomepage() {
 		return $this->ID == get_option('page_on_front');
@@ -1031,7 +1062,8 @@ abstract class WordpressPost
 	/**
 	 * Return the first post matching the arguments
 	 * @static
-	 * @param $queryArgs
+	 *
+	 * @param array $queryArgs
 	 * @return null|WordpressPost
 	 */
 	static function fetchOne($queryArgs)
@@ -1043,13 +1075,14 @@ abstract class WordpressPost
 
 	/**
 	 * @static Returns the roots of this post type (i.e those whose post_parent is self::postTypeParentId)
+	 *
 	 * @param array $queryArgs
 	 * @return OowpQuery
 	 */
 	static function fetchRoots($queryArgs = array())
 	{
-		#todo perhaps the post_parent should be set properly in the database
-//		$queryArgs['post_parent'] = static::postTypeParentId();
+		// TODO Perhaps the post_parent should be set properly in the database.
+		//$queryArgs['post_parent'] = static::postTypeParentId();
 		$queryArgs['post_parent'] = self::postTypeParentId();
 		return static::fetchAll($queryArgs);
 	}
@@ -1057,7 +1090,8 @@ abstract class WordpressPost
 
 	/**
 	 * @static
-	 * @param null $postType
+	 *
+	 * @param string $postType
 	 * @return bool Whether or not the post type is declared as hierarchical
 	 */
 	static function isHierarchical($postType = null) {
