@@ -107,6 +107,11 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 	public function &get_posts() {
 		parent::get_posts();
 
+        if(isset($this->query['fields']) && ($this->query['fields'] != "all")){
+            //just the ids have been requested (or 'id=>parent' objects), rather than post objects
+            return $this->posts;
+        }
+
 		foreach ($this->posts as $i => $post) {
 			$this->posts[$i] = WordpressPost::createWordpressPost($post);
 		}
