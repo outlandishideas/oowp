@@ -630,13 +630,24 @@ abstract class WordpressPost
 	 */
 	protected function callGlobalPost()
 	{
-		$args	 = func_get_args();
+        global $post;
+        $prevPost = $post;
+
+        // Get requested WordPress function and arguments
+        $args = func_get_args();
 		$callback = array_shift($args);
-		global $post;
-		$post = $this;
-		setup_postdata($this);
+
+		// Set up global variables to support WP function execution
+		$post = $this->get_post();
+		setup_postdata($post);
+
+		// Call the WordPress function
 		$returnVal = call_user_func_array($callback, $args);
+
+		// Restore original global variables
+		$post = $prevPost;
 		wp_reset_postdata();
+
 		return $returnVal;
 	}
 
