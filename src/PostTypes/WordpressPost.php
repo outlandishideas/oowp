@@ -623,22 +623,33 @@ abstract class WordpressPost
 		return $names;
 	}
 
-	/**
-	 * Executes a wordpress function, setting $this as the global $post first, then resets the global post data.
-	 * Expects the first argument to be the function, followed by any arguments
-	 * @return mixed
-	 */
-	protected function callGlobalPost()
-	{
-		$args	 = func_get_args();
-		$callback = array_shift($args);
-		global $post;
-		$post = $this;
-		setup_postdata($this);
-		$returnVal = call_user_func_array($callback, $args);
-		wp_reset_postdata();
-		return $returnVal;
-	}
+    /**
+     * Executes a wordpress function, setting $this as the global $post first, then resets the global post data.
+     * Expects the first argument to be the function, followed by any arguments
+     * @return mixed
+     */
+    protected function callGlobalPost()
+    {
+        global $post;
+        $prevPost = $post;
+
+        // Get requested WordPress function and arguments
+        $args = func_get_args();
+        $callback = array_shift($args);
+
+        // Set up global variables to support WP function execution
+        $post = $this->get_post();
+        setup_postdata($post);
+
+        // Call the WordPress function
+        $returnVal = call_user_func_array($callback, $args);
+
+        // Restore original global variables
+        $post = $prevPost;
+        wp_reset_postdata();
+
+        return $returnVal;
+    }
 
 	public function wp_author()
 	{
