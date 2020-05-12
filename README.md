@@ -17,11 +17,11 @@ It is designed to work with the excellent [Posts 2 Posts](https://github.com/scr
 
 Instead of having to deal with The Loop and/all the weird WordPress magic of changing what the_post() refers to behind the scenes you can write nice object-oriented code like this:
 
-```
-foreach(ooPlace::fetchAll() as $place){
-    print "<h2>Articles about $place->title<h2>";
-    foreach($place->getConnected('article') as $article{
-        print "<h3>" . $article->htmlLink(); . "</h3>";
+```php
+foreach ( ooPlace::fetchAll() as $place ) {
+    print "<h2>Articles about {$place->title}<h2>";
+    foreach ( $place->getConnected( 'article' ) as $article {
+        print '<h3>' . $article->htmlLink() . '</h3>';
         print $article->excerpt();
     }
 }
@@ -100,29 +100,26 @@ OOWP uses the Post2Post plugin to make it easy to connect and retrieve related p
 
 To register a connection between two post types declare a public static onRegistrationComplete() method which takes the same arguments as p2p_register_connection_type from Post2Post like so:
 
-```
- public static function onRegistrationComplete() {
+```php
+public static function onRegistrationComplete() {
 
-        parent::onRegistrationComplete();
+    parent::onRegistrationComplete();
 
-        self::registerConnection("TARGET_POST_TYPE", array("cardinality"=>"many-to-many"));
+    self::registerConnection( 'TARGET_POST_TYPE', array( 'cardinality' => 'many-to-many' ) );
 
-    }
+}
 ```
 
 Where `TARGET_POST_TYPE` is the class name of the custom post type that you want to connect to, such as Person, Event, etc. If connecting to another custom post type it is good practice to replace `TARGET_POST_TYPE` with `TARGET_POST_TYPE::postType()` in case you decide to change the actual name of the post type later.
 
 Once you have declared this function you can then easily fetch connected posts in your page templates using the `WordpressPost->getConnected()` method. For example:
 
-```
-foreach(ooPlace::fetchAll() as $place){
-    print "<h2>Articles about $place->title<h2>";
-    foreach($place->getConnected('article') as $article{
-        print "<h3>" . $article->htmlLink(); . "</h3>";
+```php
+foreach ( ooPlace::fetchAll() as $place ) {
+    print "<h2>Articles about {$place->title}<h2>";
+    foreach ( $place->getConnected( 'article' ) as $article {
+        print '<h3>' . $article->htmlLink() . '</h3>';
         print $article->excerpt();
     }
 }
 ```
-
-
-
