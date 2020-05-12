@@ -835,7 +835,7 @@ abstract class WordpressPost
 
 	public function featuredImageUrl($image_size = 'thumbnail'){
 		$image = wp_get_attachment_image_src($this->featuredImageAttachmentId(), $image_size);
-		return $image[0];
+		return $image ? $image[0] : null;
 	}
 
 	public function featuredImage($size = 'thumbnail', $attrs = array()){
