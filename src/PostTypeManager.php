@@ -119,6 +119,21 @@ class PostTypeManager
 		return array_key_exists($postType, $classNames) ? $classNames[$postType] : null;
     }
 
+    /**
+     * Returns true if the given fully-qualified class name represents a post type
+     * registered via registerPostTypes().
+     * @param string $className Fully-qualified name of a class which might be a post type.
+     * @return bool
+     */
+    public function postClassIsRegistered($className)
+    {
+        if (!class_exists($className)) {
+            return false;
+        }
+
+        return array_key_exists($className, $this->postTypes);
+    }
+
 	/**
 	 * Returns true if the post type was registered via registerPostTypes()
 	 * @param string $postType
