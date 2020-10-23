@@ -983,11 +983,7 @@ abstract class WordpressPost
 	}
 
 	public static function fetchBySlug($slug){
-		return static::fetchOne(array(
-			'name' => $slug,
-			'post_type' => static::getSelfPostTypeConstraint(),
-			'numberposts' => 1
-		));
+		return static::fetchOne(array('name' => $slug));
 	}
 
 	/**
