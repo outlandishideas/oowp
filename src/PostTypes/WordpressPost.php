@@ -1081,9 +1081,9 @@ abstract class WordpressPost
 
     private static function getSelfPostTypeConstraint()
     {
-        // If `get*()` methods are called on `WordpressPost` directly (not a subclass), do not
+        // If `get*()` methods are called on abstract post classes directly (not a subclass), do not
         // constrain the type of posts returned unless specified.
-        if (static::class === self::class) {
+        if (in_array(static::class, array(self::class, RoutemasterPost::class), true)) {
             return 'any';
         }
 
