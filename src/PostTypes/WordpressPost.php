@@ -983,11 +983,7 @@ abstract class WordpressPost
 	}
 
 	public static function fetchBySlug($slug){
-		return static::fetchOne(array(
-			'name' => $slug,
-			'post_type' => static::postType(),
-			'numberposts' => 1
-		));
+		return static::fetchOne(array('name' => $slug));
 	}
 
 	/**
@@ -998,7 +994,7 @@ abstract class WordpressPost
 	public static function fetchAll($queryArgs = array())
 	{
 		$defaults = array(
-			'post_type' => static::postType()
+			'post_type' => static::getSelfPostTypeConstraint()
 		);
 		if (static::isHierarchical()) {
 			$defaults['orderby'] = 'menu_order';
@@ -1047,7 +1043,12 @@ abstract class WordpressPost
 	 */
 	static function fetchOne($queryArgs)
 	{
-		$queryArgs['posts_per_page'] = 1;
+        $queryArgs['posts_per_page'] = 1; // Force-override this rather than only setting a default.
+        $defaults = array(
+            'post_type' => static::getSelfPostTypeConstraint()
+        );
+        $queryArgs = wp_parse_args($queryArgs, $defaults);
+
 		$query = new OowpQuery($queryArgs);
 		return $query->posts ? $query->post : null;
 	}
@@ -1077,6 +1078,19 @@ abstract class WordpressPost
 		}
 		return is_post_type_hierarchical($postType);
 	}
+
+    private static function getSelfPostTypeConstraint()
+    {
+        // If `get*()` methods are called on abstract post classes directly (not a registered post subclass), do not
+        // constrain the type of posts returned unless specified.
+        if (!PostTypeManager::get()->postClassIsRegistered(static::class)) {
+            return 'any';
+        }
+
+        // Otherwise, default to constraining to the type associated with the class on which the
+        // method was invoked.
+        return static::postType();
+    }
 
 #endregion
 
