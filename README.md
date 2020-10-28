@@ -124,8 +124,8 @@ foreach ( ooPlace::fetchAll() as $place ) {
 }
 ```
 
-## Wordpress.org
+## WordPress.org
 
-Unfortunately, for _new_ projects Wordpress [are not accepting](https://make.wordpress.org/plugins/2016/03/01/please-do-not-submit-frameworks/)
-libraries as plugins which they host. So direct use with (non-[Wpackagist](https://wpackagist.org/))
-Composer is the only sensible way to manage this dependency.
+Unfortunately, for _new_ projects [WordPress is not accepting](https://make.wordpress.org/plugins/2016/03/01/please-do-not-submit-frameworks/)
+libr1aries as plugins which they host. So direct usage with (non-[WPackagist](https://wpackagist.org/))
+[Packagist](https://packagist.org/packages/outlandish/oowp) is the only sensible way to manage this dependency.
