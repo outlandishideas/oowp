@@ -100,7 +100,7 @@ abstract class WordpressPost
      */
 	public static function canBeRegistered()
     {
-        return !post_type_exists(self::postType());
+        return !post_type_exists(static::postType());
     }
 
 	/**
