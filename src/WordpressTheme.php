@@ -20,7 +20,8 @@ class WordpressTheme {
 
     /**
      * @static
-     * @return static Singleton instance
+     *
+     * @return self Singleton instance
      */
     public static function getInstance() {
         if (!isset(self::$instance)) {
@@ -57,6 +58,7 @@ class WordpressTheme {
 	/**
 	 * Gets the url for an asset in this theme.
 	 * With no argument, this is just the root directory of this theme
+	 *
 	 * @param string $relativePath
 	 * @return string
 	 */
@@ -79,6 +81,7 @@ class WordpressTheme {
 
 	/**
 	 * @deprecated Use assetUrl() instead
+	 *
 	 * @return string
 	 */
 	public function siteThemeURL() {
@@ -98,8 +101,9 @@ class WordpressTheme {
 	}
 
 	/**
-	 * @param bool $parent
 	 * @deprecated Use addImageSize instead
+	 *
+	 * @param bool $parent
 	 */
 	public function  addImageSizes($parent = true){
         if ( function_exists( 'add_image_size' ) ) {
@@ -110,9 +114,10 @@ class WordpressTheme {
 
 	/**
 	 * Adds an image size to the theme, and adds the hook that ensures the thumbnails get resized when edited through the CMS
-	 * @param $name
-	 * @param $width
-	 * @param $height
+	 *
+	 * @param string $name
+	 * @param string $width
+	 * @param string $height
 	 * @param bool $crop
 	 */
 	public function addImageSize($name, $width, $height, $crop = false){
@@ -150,8 +155,9 @@ class WordpressTheme {
 
 	/**
 	 * Gets an ACF options value
-	 * @param $optionName
-	 * @return bool|mixed|string
+	 *
+	 * @param string $optionName
+	 * @return mixed
 	 */
 	public function acfOption($optionName) {
 		return get_field($optionName, 'option');
@@ -160,13 +166,15 @@ class WordpressTheme {
 	/**
 	 * Gets the acf definitions, keyed by their hierarchical name (using hyphens).
 	 * If $name is provided, a single acf definition is returned (if found)
-	 * @param $acfPostName
-	 * @param null $name
+	 *
+	 * @param string $acfPostName
+	 * @param string $name
 	 * @return array|null
 	 */
 	public function acf($acfPostName, $name = null) {
 		if (!isset($this->acfFields[$acfPostName])) {
 			$wpdb = $this->db();
+			// TODO Use wpdb->prepare()
 			$acfData = $wpdb->get_col("SELECT pm.meta_value FROM $wpdb->posts AS p INNER JOIN $wpdb->postmeta AS pm ON p.ID = pm.post_id WHERE p.post_name = 'acf_{$acfPostName}' AND pm.meta_key like 'field_%'");
 			$acfFields = array();
 			$this->populateAcf($acfFields, $acfData);
@@ -174,15 +182,16 @@ class WordpressTheme {
 		}
 		if ($name) {
 			return array_key_exists($name, $this->acfFields[$acfPostName]) ? $this->acfFields[$acfPostName][$name] : null;
-		} else {
-			return $this->acfFields[$acfPostName];
 		}
+
+		return $this->acfFields[$acfPostName];
 	}
 
 	/**
 	 * Recursively populates the acf definitions list
-	 * @param $toPopulate
-	 * @param $data array The ACF definition from the database
+	 *
+	 * @param array $toPopulate
+	 * @param array $data The ACF definition from the database
 	 * @param string $prefix The prefix to use in the name. (only applicable to hierarchical fields, i.e. repeater fields)
 	 */
 	private function populateAcf(&$toPopulate, $data, $prefix = '') {

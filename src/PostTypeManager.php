@@ -29,16 +29,16 @@ class PostTypeManager
 
 	/**
 	 * Registers a single post type from the given class
-	 * @param string $className
+	 *
+	 * @param string|WordpressPost $className
 	 * @throws \RuntimeException if $className is not a subclass of WordpressPost
 	 */
     protected function registerPostType($className)
     {
-		/** @var WordpressPost|string $className */
-
     	if (!is_subclass_of($className, 'Outlandish\Wordpress\Oowp\PostTypes\WordpressPost')) {
     		throw new \RuntimeException($className . ' is not a subclass of WordpressPost');
 		}
+
     	$postType = $className::postType();
         if (in_array($postType, $this->postTypes)) {
             // already registered
@@ -110,7 +110,8 @@ class PostTypeManager
 
 	/**
 	 * Gets the name of the class that corresponds to the given post type
-	 * @param $postType
+	 *
+	 * @param string $postType
 	 * @return WordpressPost|string
 	 */
     public function getClassName($postType)
@@ -159,7 +160,7 @@ class PostTypeManager
      * @param string $targetPostType
      * @param array $parameters
      * @param string $connectionName
-     * @return bool|object
+     * @return bool|object|null
      */
 	public function registerConnection($postType, $targetPostType, $parameters, $connectionName = null)
 	{

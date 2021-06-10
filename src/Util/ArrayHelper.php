@@ -12,9 +12,10 @@ class ArrayHelper {
     /**
      * Inserts the (key, value) pair into the array, before the given key. If the given key is not found,
      * it is inserted at the beginning
-     * @param $beforeKey
-     * @param $key
-     * @param $value
+     *
+     * @param string $beforeKey
+     * @param string $key
+     * @param mixed $value
      */
     function insertBefore($beforeKey, $key, $value) {
         $newArray = array();
@@ -37,9 +38,10 @@ class ArrayHelper {
     /**
      * Inserts the (key, value) pair into the array, after the given key. If the given key is not found,
      * it is inserted at the end
-     * @param $afterKey
-     * @param $key
-     * @param $value
+     *
+     * @param string $afterKey
+     * @param string $key
+     * @param mixed $value
      */
     function insertAfter($afterKey, $key, $value) {
         if (array_key_exists($afterKey, $this->array)) {
