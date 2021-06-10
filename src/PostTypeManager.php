@@ -99,7 +99,7 @@ class PostTypeManager
                     }
                 }
             }
-        }, '99', 2); // use high priority value to ensure this happens after acf finishes saving its metadata
+        }, 99, 2); // use high priority value to ensure this happens after acf finishes saving its metadata
 
         $this->registered = true;
         do_action('oowp/all_post_types_registered', $this->postTypes);
