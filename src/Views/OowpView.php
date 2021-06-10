@@ -12,7 +12,7 @@ abstract class OowpView
     public function __construct($args = [])
     {
         $this->theme = WordpressTheme::getInstance();
-        foreach($args as $name => $value) {
+        foreach ($args as $name => $value) {
             $this->$name = $value;
         }
     }
