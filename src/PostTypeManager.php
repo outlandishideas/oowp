@@ -44,7 +44,7 @@ class PostTypeManager
             // already registered
             return;
         }
-		if ($postType !== 'page' && $postType !== 'post' && $postType !== 'attachment' ) {
+		if ($className::canBeRegistered()) {
 			$registrationArgs = $className::getRegistrationArgs();
 			register_post_type($postType, $registrationArgs);
 		}
