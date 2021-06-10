@@ -36,23 +36,23 @@ class RssFeed extends OowpView
     protected function renderSiteInfo()
     {
         $description = $this->description ?: "Latest news from {$this->name}";
-        $title = $this->title ?: "{$this->name} latest updates";
-?>
+        $title       = $this->title ?: "{$this->name} latest updates";
+        ?>
         <title><?php echo $title; ?></title>
         <description><?php echo $description; ?></description>
-                <link><?php echo $this->url; ?></link>
+        <link><?php echo $this->url; ?></link>
         <lastBuildDate><?php echo date('D, d M Y H:i:s T'); ?></lastBuildDate>
         <pubDate><?php echo date('D, d M Y H:i:s T'); ?></pubDate>
-                <ttl>1800</ttl>
-                <?php
+        <ttl>1800</ttl>
+        <?php
     }
 
     protected function renderItems()
     {
-                $view = new RssItem();
-                foreach($this->items as $item) {
-                    $view->post = $item;
-                    $view->render();
-                }
+        $view = new RssItem();
+        foreach ($this->items as $item) {
+            $view->post = $item;
+            $view->render();
+        }
     }
 }

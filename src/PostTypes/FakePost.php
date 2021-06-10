@@ -5,8 +5,10 @@ namespace Outlandish\Wordpress\Oowp\PostTypes;
 /**
  * As WordpressPost is abstract, this class can be used for entities that have no real existence, e.g. 404 pages
  */
-class FakePost extends WordpressPost {
-    public function __construct($args = array()) {
+class FakePost extends WordpressPost
+{
+    public function __construct($args = array())
+    {
         //set defaults
         $postArray = wp_parse_args($args, array(
             'ID' => 0,
@@ -27,7 +29,8 @@ class FakePost extends WordpressPost {
         parent::__construct($postArray);
     }
 
-    public function permalink($leaveName = false) {
+    public function permalink($leaveName = false)
+    {
         if (!empty($this->permalink)) {
             return $this->permalink;
         }
@@ -37,7 +40,8 @@ class FakePost extends WordpressPost {
     /**
      * @return string the Robots meta tag, should be NOINDEX, NOFOLLOW for some post types
      */
-    public function robots(){
+    public function robots()
+    {
         return "NOINDEX, NOFOLLOW";
     }
 }
