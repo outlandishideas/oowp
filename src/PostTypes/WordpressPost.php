@@ -88,6 +88,17 @@ abstract class WordpressPost
 		}
 	}
 
+    /**
+     * Called during PostTypeManager::registerPostType
+     * Post types should normally only be registered by oowp if they're not already registered in wordpress,
+     * but there may be exceptional circumstances where they might be re-registered, so this function can be overridden
+     * @return bool
+     */
+	public static function canBeRegistered()
+    {
+        return !post_type_exists(self::postType());
+    }
+
 	/**
 	 * Called after all OOWP posts have been registered
 	 * @static
