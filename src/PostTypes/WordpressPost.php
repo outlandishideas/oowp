@@ -137,6 +137,13 @@ abstract class WordpressPost
 	}
 
 	/**
+	 * Override this to hook into the before_delete event.
+	 */
+	public function onDelete() {
+		// do nothing
+	}
+
+	/**
 	 * Proxy magic properties to WP_Post
 	 *
 	 * @param string $name

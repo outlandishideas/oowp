@@ -104,6 +104,16 @@ class PostTypeManager
 			}
 		}, '99', 2); // use high priority value to ensure this happens after acf finishes saving its metadata
 
+		add_action('before_delete_post', function($postId) {
+			$query = (new OowpQuery([
+				'post__in' => [$postId],
+				'post_status' => 'trash'
+			]));
+			if (count($query)) {
+				$query->posts[0]->onDelete();
+			}
+		});
+
 		$this->registered = true;
 		do_action('oowp/all_post_types_registered', $this->postTypes);
     }
