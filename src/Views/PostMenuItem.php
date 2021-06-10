@@ -6,7 +6,7 @@ class PostMenuItem extends PostView
 {
     public function render($args = [])
     {
-        $post = $this->post;
+        $post    = $this->post;
         $classes = ['page_item', 'page-item-' . $post->ID];
         if ($post->isCurrentPage()) {
             $classes[] = 'current_page_item';
@@ -18,7 +18,7 @@ class PostMenuItem extends PostView
             $classes[] = 'current_page_ancestor';
         }
         $children = $post->children();
-        $args = array_merge([
+        $args     = array_merge([
             'max_depth' => 0,
             'current_depth' => 1
         ], $args);
@@ -26,17 +26,17 @@ class PostMenuItem extends PostView
         <li class="<?php echo implode(' ', $classes); ?>">
             <a href="<?php echo $post->permalink(); ?>"><?php echo $post->title(); ?></a>
 
-            <?php if ($children->post_count && ( !$args['max_depth'] || $args['current_depth'] < $args['max_depth'] )): ?>
-            <ul class="children">
-                <?php
-                $childView = new PostMenuItem();
-                $args['current_depth']++;
-                foreach($post->children() as $child){
-                    $childView->post = $child;
-                    $childView->render($args);
-                }
-                ?>
-            </ul>
+            <?php if ($children->post_count && (!$args['max_depth'] || $args['current_depth'] < $args['max_depth'])): ?>
+                <ul class="children">
+                    <?php
+                    $childView = new PostMenuItem();
+                    $args['current_depth']++;
+                    foreach ($post->children() as $child) {
+                        $childView->post = $child;
+                        $childView->render($args);
+                    }
+                    ?>
+                </ul>
             <?php endif; ?>
         </li>
         <?php
