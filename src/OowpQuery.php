@@ -25,10 +25,11 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
         );
         $query    = wp_parse_args($query, $defaults);
 
-        // if there is no post type, or the post type is singular and isn't valid, replace it with 'any'
+        // If there is no post type, or the post type is singular and isn't valid, replace it with any *except*
+        // 'attachment' which can cause crashes on ?preview=true if a file title matches a render-able post's.
         if (!isset($query['post_type']) || (!is_array($query['post_type']) && !array_key_exists($query['post_type'],
                     $wp_post_types))) {
-            $query['post_type'] = 'any';
+            $query['post_type'] = array_values(array_diff(get_post_types(), array('attachment')));
         }
 
         parent::__construct($query);
