@@ -29,7 +29,7 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
         // 'attachment' which can cause crashes on ?preview=true if a file title matches a render-able post's.
         if (!isset($query['post_type']) || (!is_array($query['post_type']) && !array_key_exists($query['post_type'],
                     $wp_post_types))) {
-            $query['post_type'] = $wp_post_types;
+            $query['post_type'] = array_values(get_post_types());
             $attachmentTypeIndex = array_search('attachment', $query['post_type'], true);
             if ($attachmentTypeIndex !== false) {
                 array_splice($query['post_type'], $attachmentTypeIndex, 1);
