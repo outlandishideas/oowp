@@ -169,8 +169,8 @@ class AdminUtils
                     if (isset($icons[$type])) {
                         $pattern = preg_replace('/{post_type}/', $postType, $pattern);
                         echo $pattern . ' {
-					background: url(' . get_bloginfo('template_url') . '/images/' . $icons[$type] . ') no-repeat center center !important;
-				}';
+                            background: url(' . get_bloginfo('template_url') . '/images/' . $icons[$type] . ') no-repeat center center !important;
+                        }';
                     }
                 }
             }
