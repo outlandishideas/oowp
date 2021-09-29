@@ -970,7 +970,12 @@ abstract class WordpressPost
     }
 
     /**
-     * Use this in combination with getCustomAdminColumnValue to add custom columns to the wp admin interface for the post.
+     * Use this in combination with getCustomAdminColumnValue to add custom columns to the wp admin interface for
+     * the post. Typically you'll want to modify the existing default columns passed in as `$helper`, using
+     * { @see ArrayHelper::insertAfter() }.
+     *
+     * e.g. $helper->insertAfter('title', 'name', 'Name');
+     *
      * @static
      *
      * @param ArrayHelper $helper Contains the default columns
