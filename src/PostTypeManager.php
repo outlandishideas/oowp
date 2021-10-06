@@ -10,18 +10,30 @@ class PostTypeManager
     protected $postTypes = [];
     protected $connections = [];
 
-    private function __construct()
+    /**
+     * This base PostTypeManager is expected to be used with a singleton pattern, so directly instantiating it
+     * is likely to be a mistake. The constructor is therefore `protected`. But if you're really sure you want to
+     * use a different pattern when extending it, you can do so and make your subclass's constructor public.
+     *
+     * @see PostTypeManager::get()
+     */
+    protected function __construct()
     {
     }
 
     protected static $instance;
 
+    /**
+     * Singleton getter that now allows for subclasses without a copy of the method (via `static::`).
+     *
+     * @return PostTypeManager  This class or a subclass.
+     */
     public static function get()
     {
-        if (!self::$instance) {
-            self::$instance = new PostTypeManager();
+        if (!static::$instance) {
+            static::$instance = new static();
         }
-        return self::$instance;
+        return static::$instance;
     }
 
     /**
