@@ -19,7 +19,7 @@ class ListPostsShortcode
         $postType = $params['type']; //what kind of post are we querying
         unset($params['type']); //don't need this any more
 
-		$manager = PostTypeManager::get();
+        $manager = PostTypeManager::get();
 
         if(!$manager->postTypeIsRegistered($postType)){
             if(defined('WP_DEBUG') && WP_DEBUG) {
