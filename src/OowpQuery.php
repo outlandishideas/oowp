@@ -17,19 +17,18 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
      */
     function __construct($query = '')
     {
-        global $wp_post_types;
-
-        $defaults = array(
+        $defaults = [
             'posts_per_page' => -1,
             'post_status' => 'publish'
-        );
+        ];
         $query    = wp_parse_args($query, $defaults);
 
         // If there is no post type, or the post type is singular and isn't valid, replace it with any *except*
         // 'attachment' which can cause crashes on ?preview=true if a file title matches a render-able post's.
-        if (!isset($query['post_type']) || (!is_array($query['post_type']) && !array_key_exists($query['post_type'],
-                    $wp_post_types))) {
-            $query['post_type'] = array_values(array_diff(get_post_types(), array('attachment')));
+        $validPostTypes    = get_post_types();
+        $requestedPostType = $query['post_type'] ?? 'any';
+        if (is_scalar($requestedPostType) && !array_key_exists($requestedPostType, $validPostTypes)) {
+            $query['post_type'] = array_values(array_diff($validPostTypes, ['attachment']));
         }
 
         parent::__construct($query);
@@ -115,11 +114,19 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 
     /**
      * Convert WP_Post objects to WordpressPost
-     * @return WordpressPost[]
+     * If $query['fields'] is 'ids', then this will just return the post IDs
+     * If $query['fields'] is 'id->parent', then this will return an array of objects that represents the parent-child relationships
+     * See https://developer.wordpress.org/reference/classes/wp_query/#return-fields-parameter
+     * @return WordpressPost[]|int[]|\stdClass[]
      */
     public function &get_posts()
     {
         parent::get_posts();
+
+        $fields = $this->query['fields'] ?? 'all';
+        if ($fields && $fields !== 'all') {
+            return $this->posts;
+        }
 
         foreach ($this->posts as $i => $post) {
             $this->posts[$i] = WordpressPost::createWordpressPost($post);

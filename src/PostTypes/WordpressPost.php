@@ -43,7 +43,6 @@ use Outlandish\Wordpress\Oowp\WordpressTheme;
  */
 abstract class WordpressPost
 {
-
     protected $_cache = array();
     protected static $_staticCache = array();
 
@@ -499,16 +498,12 @@ abstract class WordpressPost
     {
         $parentId = $this->post_parent;
         if (!$parentId) {
-            $parentId = static::postTypeParentId();
-        }
-        $parentSlug = static::postTypeParentSlug();
-        if (empty($parentId) && empty($parentSlug)) {
-            return null;
+            return static::postTypeParent();
         }
 
         $parent = $this->getCacheValue();
         if (!$parent) {
-            $parent = $parentId ? WordpressPost::fetchById($parentId) : WordpressPost::fetchBySlug($parentSlug);
+            $parent = WordpressPost::fetchById($parentId);
             $this->setCacheValue($parent);
         }
         return $parent;
@@ -534,6 +529,28 @@ abstract class WordpressPost
     public static function postTypeParentSlug()
     {
         return '';
+    }
+
+    /**
+     * Gets the parent for posts of this type, based on either the ID or slug, whichever is defined for the post type
+     * @return WordpressPost|null
+     */
+    public static function postTypeParent()
+    {
+        $key = 'post_type_parent__' . static::postType();
+        if (!array_key_exists($key, WordpressPost::$_staticCache)) {
+            $parentId   = static::postTypeParentId();
+            $parentSlug = static::postTypeParentSlug();
+            if ($parentId) {
+                $parent = WordpressPost::fetchById($parentId);
+            } elseif ($parentSlug) {
+                $parent = WordpressPost::fetchBySlug($parentSlug);
+            } else {
+                $parent = null;
+            }
+            WordpressPost::$_staticCache[$key] = $parent;
+        }
+        return WordpressPost::$_staticCache[$key];
     }
 
     /**
@@ -1022,8 +1039,8 @@ abstract class WordpressPost
      */
     static function registerConnection($targetPostType, $parameters = array(), $connectionName = null)
     {
-        return PostTypeManager::get()->registerConnection(self::postType(), $targetPostType, $parameters,
-            $connectionName);
+        return PostTypeManager::get()
+            ->registerConnection(self::postType(), $targetPostType, $parameters, $connectionName);
     }
 
     /**
@@ -1098,6 +1115,20 @@ abstract class WordpressPost
         $query     = new OowpQuery($queryArgs);
 
         return $query;
+    }
+
+    /**
+     * @static
+     * Does the same querying as in fetchAll, but only returns the IDs of the matches posts
+     *
+     * @param array $queryArgs Accepts a wp_query $queryArgs array which overwrites the defaults
+     * @return int[]
+     */
+    public static function fetchIds($queryArgs = [])
+    {
+        $queryArgs['fields'] = 'ids';
+        $query               = static::fetchAll($queryArgs);
+        return $query->posts;
     }
 
     /**
