@@ -28,7 +28,7 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
         $validPostTypes    = get_post_types();
         $requestedPostType = $query['post_type'] ?? 'any';
         if (is_scalar($requestedPostType) && !array_key_exists($requestedPostType, $validPostTypes)) {
-            $query['post_type'] = array_values(array_diff($validPostTypes, ['attachment']));
+            $query['post_type'] = array_values(array_diff($validPostTypes, ['attachment']))[0];
         }
 
         parent::__construct($query);
