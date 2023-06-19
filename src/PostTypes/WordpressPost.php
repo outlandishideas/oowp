@@ -8,7 +8,7 @@ use Outlandish\Wordpress\Oowp\Util\AdminUtils;
 use Outlandish\Wordpress\Oowp\Util\ArrayHelper;
 use Outlandish\Wordpress\Oowp\Util\ReflectionUtils;
 use Outlandish\Wordpress\Oowp\Util\StringUtils;
-use Outlandish\Wordpress\Oowp\WordpressTheme;
+use Outlandish\Wordpress\Oowp\WpThemeHelper;
 
 /**
  * This class contains functions which are shared across all post types, and across all sites.
@@ -43,13 +43,14 @@ use Outlandish\Wordpress\Oowp\WordpressTheme;
  */
 abstract class WordpressPost
 {
-    protected $_cache = array();
-    protected static $_staticCache = array();
+    /** @var array Cache for post-specific data */
+    protected array $_cache = [];
 
-    /**
-     * @var \WP_Post
-     */
-    protected $post;
+    /** @var array Cache for global post data */
+    protected static $_staticCache = [];
+
+    /** @var \WP_Post */
+    protected \WP_Post $post;
 
 
 #region Getters, Setters, Construct, Init
@@ -57,9 +58,9 @@ abstract class WordpressPost
     /**
      * @param int|array|object $data
      */
-    public function __construct($data)
+    public function __construct(mixed $data)
     {
-        //Make sure it's an object
+        // Make sure it's an object
         $this->post = self::getPostObject($data);
     }
 
@@ -68,27 +69,25 @@ abstract class WordpressPost
      * @static
      *
      * @param mixed $data
-     * @return \WP_Post|WordpressPost
+     * @return ?\WP_Post
      */
-    public static function getPostObject($data)
+    public static function getPostObject(mixed $data) : ?\WP_Post
     {
-        if (is_array($data)) {
-            return new \WP_Post((object)$data);
-        }
-        if (is_object($data) && $data instanceof \WP_Post) {
+        if ($data instanceof \WP_Post) {
             return $data;
         }
-        if (is_object($data)) {
-            return new \WP_Post($data);
+        if (is_array($data) || is_object($data)) {
+            return new \WP_Post((object)$data);
         }
-        if (is_numeric($data) && is_integer($data + 0)) {
-            return get_post($data);
+        if (is_numeric($data) && is_integer($data + 0) && $data > 0) {
+            $post = get_post($data);
+            if (!$post) {
+                throw new \RuntimeException('Post not found: ' . $data);
+            }
+            return $post;
         }
 
-        //TODO: should this throw an exception instead?
-        //this is the only way this can return a WordpressPost object
-        global $post;
-        return $post;
+        throw new \RuntimeException('Invalid use of getPostObject');
     }
 
     /**
@@ -97,7 +96,7 @@ abstract class WordpressPost
      * but there may be exceptional circumstances where they might be re-registered, so this function can be overridden
      * @return bool
      */
-    public static function canBeRegistered()
+    public static function canBeRegistered() : bool
     {
         return !post_type_exists(static::postType());
     }
@@ -106,14 +105,14 @@ abstract class WordpressPost
      * Called after all OOWP posts have been registered
      * @static
      */
-    public static function onRegistrationComplete()
+    public static function onRegistrationComplete() : void
     {
     }
 
     /**
      * Return the underlying WP_Post
      */
-    public function get_post()
+    public function getWpPost() : \WP_Post
     {
         return $this->post;
     }
@@ -121,19 +120,19 @@ abstract class WordpressPost
     /**
      * Sets the underlying WP_Post as the global post
      */
-    public function setAsGlobal()
+    public function setAsGlobal() : void
     {
         global $post;
-        $post = $this->get_post();
+        $post = $this->getWpPost();
     }
 
     /**
      * Override this to hook into the save event. This is called with low priority so
      * all fields should be already saved
      */
-    public function onSave($postData)
+    public function onSave($postData) : void
     {
-        // do nothing
+        // do nothing by default
     }
 
     /**
@@ -142,7 +141,7 @@ abstract class WordpressPost
      * @param string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name) : mixed
     {
         return $this->post->$name;
     }
@@ -152,20 +151,19 @@ abstract class WordpressPost
      *
      * @param string $name
      * @param mixed $value
-     * @return mixed
      */
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value) : void
     {
-        return $this->post->$name = $value;
+        $this->post->$name = $value;
     }
 
     /**
      * Proxy magic properties to WP_Post
      *
      * @param string $name
-     * @return mixed
+     * @return bool
      */
-    public function __isset($name)
+    public function __isset(string $name) : bool
     {
         return isset($this->post->$name);
     }
@@ -175,10 +173,14 @@ abstract class WordpressPost
      *
      * @return mixed
      */
-    protected function getCacheValue()
+    protected function getCacheValue() : mixed
     {
         $functionName = ReflectionUtils::getCaller();
-        return (array_key_exists($functionName, $this->_cache) ? $this->_cache[$functionName] : null);
+        $value = null;
+        if (array_key_exists($functionName, $this->_cache)) {
+            $value = $this->_cache[$functionName];
+        }
+        return $value;
     }
 
     /**
@@ -187,7 +189,7 @@ abstract class WordpressPost
      * @param mixed $value
      * @return mixed
      */
-    protected function setCacheValue($value)
+    protected function setCacheValue(mixed $value) : mixed
     {
         $this->_cache[ReflectionUtils::getCaller()] = $value;
         return $value;
@@ -197,31 +199,33 @@ abstract class WordpressPost
 
 #region Default getters
 
-    protected static $postTypes = array();
-
     /**
      * @static
      *
      * @return string The post name for this class, derived from the classname
      */
-    public static function postType()
+    public static function postType() : string
     {
-        $class = get_called_class();
-        $key   = $class;
-        if (!array_key_exists($key, static::$postTypes)) {
-            $postType = null;
-            // strip out the namespace, then take a substring from the first capital letter, and un-camel case it
-            $class = substr($class, strrpos($class, '\\') + 1);
-            if (preg_match('/([A-Z].*)/m', $class, $regs)) {
-                $match    = $regs[1];
-                $postType = lcfirst(StringUtils::fromCamelCase($match));
-            }
-            static::$postTypes[$key] = $postType;
+        // if not cached, derive post type from class name
+        $key = 'post_type_' . static::class;
+        if (!array_key_exists($key, WordpressPost::$_staticCache)) {
+            WordpressPost::$_staticCache[$key] = static::generatePostType();
         }
 
-        $postType = static::$postTypes[$key];
+        return WordpressPost::$_staticCache[$key];
+    }
+
+    protected static function generatePostType() : string
+    {
+        $postType = null;
+        $className = static::class;
+        // strip out the namespace, then take a substring from the first capital letter, and un-camel case it
+        $className = substr($className, strrpos($className, '\\') + 1);
+        if (preg_match('/([A-Z].*)/m', $className, $regs)) {
+            $postType = StringUtils::fromCamelCase($regs[1]);
+        }
         if (!$postType) {
-            die('Invalid post type (' . $class . ')');
+            die('Invalid post type (' . $className . ')');
         }
         return $postType;
     }
@@ -231,7 +235,7 @@ abstract class WordpressPost
      *
      * @return string The human-friendly name of this class, derived from the post name
      */
-    public static function friendlyName()
+    public static function friendlyName() : string
     {
         return ucwords(str_replace('_', ' ', static::postType()));
     }
@@ -241,170 +245,53 @@ abstract class WordpressPost
      *
      * @return string The human-friendly name of this class, derived from the post name
      */
-    public static function friendlyNamePlural()
+    public static function friendlyNamePlural() : string
     {
         return static::friendlyName() . 's';
     }
 
     /**
-     * @param array $posts Array of posts/post ids
+     * Recursively navigates from root to leaf
+     * @param object $p
+     * @return array
      */
-    public function connectAll($posts)
+    public static function walkTree(object $p) : array
     {
-        foreach ($posts as $post) {
-            $this->connect($post);
-        }
-    }
-
-    /**
-     * @param int|object|WordpressPost $post
-     * @param array $meta
-     * @param string $connectionName
-     */
-    public function connect($post, $meta = array(), $connectionName = null)
-    {
-        $post = WordpressPost::createWordpressPost($post);
-        if ($post) {
-            if (!$connectionName) {
-                $connectionName = PostTypeManager::get()->generateConnectionName(self::postType(), $post->post_type);
-            }
-            /** @var \P2P_Directed_Connection_Type $connectionType */
-            $connectionType = p2p_type($connectionName);
-            if ($connectionType) {
-                $p2pId = $connectionType->connect($this->ID, $post->ID);
-                foreach ($meta as $key => $value) {
-                    p2p_update_meta($p2pId, $key, $value);
-                }
-            }
-        }
-    }
-
-    /**
-     * @param string|string[] $targetPostType e.g. post, event - the type of connected post(s) you want
-     * @param bool $single Just return the first/only post?
-     * @param array $queryArgs Augment or overwrite the default parameters for the WP_Query
-     * @param bool $hierarchical If this is true the the function will return any post that is connected to this post *or any of its descendants*
-     * @param string|string[] $connectionName If specified, only this connection name is used to find the connected posts (defaults to any/all connections to $targetPostType)
-     * @return null|OowpQuery|WordpressPost
-     */
-    public function connected(
-        $targetPostType,
-        $single = false,
-        $queryArgs = array(),
-        $hierarchical = false,
-        $connectionName = null
-    ) {
-        $toReturn = null;
-        if (function_exists('p2p_register_connection_type')) {
-            if (!is_array($targetPostType)) {
-                $targetPostType = array($targetPostType);
-            }
-            $manager  = PostTypeManager::get();
-            $postType = self::postType();
-
-            if (!$connectionName) {
-                $connectionName = $manager->getConnectionNames($postType, $targetPostType);
-            } elseif (!is_array($connectionName)) {
-                $connectionName = [$connectionName];
-            }
-
-            $defaults = array(
-                'connected_type' => $connectionName,
-                'post_type' => $targetPostType,
-            );
-
-            // ignore $hierarchical = true if this post type is not hierarchical
-            if ($hierarchical && !self::isHierarchical($postType)) {
-                $hierarchical = false;
-            }
-
-            if ($hierarchical) {
-                $defaults['connected_items'] = array_merge($this->getDescendantIds(), array($this->ID));
-            } else {
-                $defaults['connected_items'] = $this->ID;
-            }
-
-            // use the menu order if $hierarchical is true, or any of the target post types are hierarchical
-            $useMenuOrder = $hierarchical;
-            if (!$useMenuOrder) {
-                foreach ($targetPostType as $otherPostType) {
-                    if (self::isHierarchical($otherPostType)) {
-                        $useMenuOrder = true;
-                        break;
-                    }
-                }
-            }
-            if ($useMenuOrder) {
-                $defaults['orderby'] = 'menu_order';
-                $defaults['order']   = 'asc';
-            }
-
-            $queryArgs = array_merge($defaults, $queryArgs);
-            $result    = new OowpQuery($queryArgs);
-
-            if ($hierarchical) { //filter out any duplicate posts
-                $post_ids = array();
-                foreach ($result->posts as $i => $post) {
-                    if (in_array($post->ID, $post_ids)) {
-                        unset($result->posts[$i]);
-                    }
-
-                    $post_ids[] = $post->ID;
-                }
-            }
-
-            $toReturn = $single ? null : $result;
-            if (!$single) {
-                $toReturn = $result;
-            } elseif ($result && $result->posts) {
-                $toReturn = $result->posts[0];
-            }
-        }
-
-        return $toReturn;
-    }
-
-    static function walkTree($p, &$current_descendants = array())
-    {
-        $current_descendants = array_merge($p->children, $current_descendants);
+        $currentDescendants = $p->children;
         foreach ($p->children as $child) {
-            self::walkTree($child, $current_descendants);
+            $currentDescendants = array_merge($currentDescendants, self::walkTree($child));
         }
 
-        return $current_descendants;
-
+        return $currentDescendants;
     }
 
-    function getDescendants()
+    public function getDescendants() : array
     {
-        $posts = self::fetchAll();
-        $keyed = array();
-        foreach ($posts as $post) {
-            $keyed[$post->ID]           = $post;
-            $keyed[$post->ID]->children = array();
+        $keyed = [];
+        foreach (static::fetchAll() as $post) {
+            $keyed[$post->ID] = $post;
+            $keyed[$post->ID]->children = [];
         }
-        unset($posts);
-        foreach ($keyed as $post) { /* This is all a bit complicated but it works */
+        foreach ($keyed as $post) {
             if ($post->post_parent) {
                 $keyed[$post->post_parent]->children[] = $post;
             }
         }
 
-        $p           = $keyed[$this->ID];
-        $descendants = static::walkTree($p);
-        return $descendants;
+        $p = $keyed[$this->ID];
+        return static::walkTree($p);
     }
 
-    function getDescendantIds()
+    public function getDescendantIds() : array
     {
-        $ids = array();
+        $ids = [];
         foreach ($this->getDescendants() as $d) {
             $ids[] = $d->ID;
         }
         return $ids;
     }
 
-    public function allMetadata()
+    public function allMetadata() : mixed
     {
         return get_metadata('post', $this->ID);
     }
@@ -415,23 +302,11 @@ abstract class WordpressPost
      * @param bool $single
      * @return array|string
      */
-    public function metadata($name, $single = true)
+    public function metadata(string $name, bool $single = true) : mixed
     {
-        $meta = null;
-        if (function_exists('get_field')) {
-            $meta = get_field($name, $this->ID);
-            // if not found by acf, then may not be an acf-configured field, so fall back on normal wp method
-            if ($meta === false) {
-                $fieldObj = get_field_object($name, $this->ID);
-                if (!$fieldObj || !$fieldObj['key']) {
-                    $meta = get_post_meta($this->ID, $name, $single);
-                }
-            }
-        } else {
-            $meta = get_post_meta($this->ID, $name, $single);
-        }
+        $meta = get_post_meta($this->ID, $name, $single);
         if (!$single && !$meta) {
-            $meta = array(); // ensure return type is an array
+            $meta = []; // ensure return type is an array
         }
         return $meta;
     }
@@ -442,13 +317,9 @@ abstract class WordpressPost
      * @param string $key
      * @param mixed $value
      */
-    public function setMetadata($key, $value)
+    public function setMetadata(string $key, mixed $value) : int|bool
     {
-        if (function_exists('update_field')) {
-            update_field($key, $value, $this->ID);
-        } else {
-            update_post_meta($this->ID, $key, $value);
-        }
+        return update_post_meta($this->ID, $key, $value);
     }
 
     /**
@@ -456,13 +327,9 @@ abstract class WordpressPost
      *
      * @param string $key
      */
-    public function deleteMetadata($key)
+    public function deleteMetadata(string $key) : bool
     {
-        if (function_exists('delete_field')) {
-            delete_field($key, $this->ID);
-        } else {
-            delete_post_meta($this->ID, $key);
-        }
+        return delete_post_meta($this->ID, $key);
     }
 
     /***************************************************************************************************************************************
@@ -471,22 +338,22 @@ abstract class WordpressPost
      *                                                                                                                                       *
      ***************************************************************************************************************************************/
 
-    public function title()
+    public function title() : string
     {
         return apply_filters('the_title', $this->post_title, $this->ID);
     }
 
-    public function content()
+    public function content() : string
     {
         return apply_filters('the_content', $this->post_content);
     }
 
-    public function date($format = 'd M Y')
+    public function date(string $format = 'd M Y') : string
     {
         return date($format, $this->timestamp());
     }
 
-    public function modifiedDate($format = 'd M Y')
+    public function modifiedDate(string $format = 'd M Y') : string
     {
         return date($format, strtotime($this->post_modified));
     }
@@ -494,7 +361,7 @@ abstract class WordpressPost
     /**
      * @return WordpressPost|null Get parent of post (or post type)
      */
-    public function parent()
+    public function parent() : ?WordpressPost
     {
         $parentId = $this->post_parent;
         if (!$parentId) {
@@ -503,10 +370,28 @@ abstract class WordpressPost
 
         $parent = $this->getCacheValue();
         if (!$parent) {
-            $parent = WordpressPost::fetchById($parentId);
-            $this->setCacheValue($parent);
+            $parent = $this->setCacheValue(WordpressPost::fetchById($parentId));
         }
         return $parent;
+    }
+
+    /**
+     * Get array of all parent posts, beginning
+     * with highest parent
+     *
+     * @return WordpressPost[]
+     */
+    public function parents() : array
+    {
+        $parents = [];
+
+        $post = $this;
+        while ($parent = $post->parent()) {
+            $parents[] = $parent;
+            $post = $parent;
+        }
+
+        return array_reverse($parents);
     }
 
     /**
@@ -515,7 +400,7 @@ abstract class WordpressPost
      *
      * @return int The ID of the parent post for this post type.
      */
-    public static function postTypeParentId()
+    public static function postTypeParentId() : int
     {
         return 0;
     }
@@ -526,7 +411,7 @@ abstract class WordpressPost
      *
      * @return string The slug of the parent post for this post type.
      */
-    public static function postTypeParentSlug()
+    public static function postTypeParentSlug() : string
     {
         return '';
     }
@@ -535,11 +420,11 @@ abstract class WordpressPost
      * Gets the parent for posts of this type, based on either the ID or slug, whichever is defined for the post type
      * @return WordpressPost|null
      */
-    public static function postTypeParent()
+    public static function postTypeParent() : ?WordpressPost
     {
         $key = 'post_type_parent__' . static::postType();
         if (!array_key_exists($key, WordpressPost::$_staticCache)) {
-            $parentId   = static::postTypeParentId();
+            $parentId = static::postTypeParentId();
             $parentSlug = static::postTypeParentSlug();
             if ($parentId) {
                 $parent = WordpressPost::fetchById($parentId);
@@ -556,7 +441,7 @@ abstract class WordpressPost
     /**
      * Traverses up the getParent() hierarchy until finding one with no parent, which is returned
      */
-    public function getRoot()
+    public function getRoot() : WordpressPost
     {
         $parent = $this->parent();
         if ($parent) {
@@ -565,20 +450,22 @@ abstract class WordpressPost
         return $this;
     }
 
-    public function timestamp()
+    public function timestamp() : string
     {
         return strtotime($this->post_date);
     }
 
-    function excerpt($chars = 400, $stuff = null)
+    public function excerpt(int $chars = 400, ?string $stuff = null) : string
     {
-        (!empty($stuff) ?: $stuff = $this->content());
+        if (empty($stuff)) {
+            $stuff = $this->content();
+        }
         $content = str_replace("<!--more-->", '<span id="more-1"></span>', $stuff);
         //try to split on more link
-        $parts     = preg_split('|<span id="more-\d+"></span>|i', $content);
-        $content   = $parts[0];
-        $content   = strip_tags($content);
-        $excerpt   = '';
+        $parts = preg_split('|<span id="more-\d+"></span>|i', $content);
+        $content = $parts[0];
+        $content = strip_tags($content);
+        $excerpt = '';
         $sentences = array_filter(explode(" ", $content));
         if ($sentences) {
             foreach ($sentences as $sentence) {
@@ -611,7 +498,7 @@ abstract class WordpressPost
         return ($excerpt);
     }
 
-    public function permalink($leaveName = false)
+    public function permalink(bool $leaveName = false) : string
     {
         if ($this->isHomepage()) {
             return rtrim(get_bloginfo('url'), '/') . '/';
@@ -628,26 +515,26 @@ abstract class WordpressPost
      * @param array $queryArgs
      * @return WordpressPost[]|OowpQuery
      */
-    public function children($queryArgs = array())
+    public function children(array $queryArgs = []) : OowpQuery
     {
-        $posts     = array();
+        $posts = [];
         $postTypes = (array_key_exists('post_type', $queryArgs) ? $queryArgs['post_type'] : 'any');
         unset($queryArgs['post_type']);
         if (!is_array($postTypes)) {
-            $postTypes = array($postTypes);
+            $postTypes = [$postTypes];
         }
         $manager = PostTypeManager::get();
         foreach ($this->childPostClassNames() as $className) {
             foreach ($postTypes as $postType) {
-                if ($postType == 'any' || ($postType != 'none' && $manager->getClassName($postType) == $className)) {
+                if ($postType === 'any' || ($postType !== 'none' && $manager->getClassName($postType) === $className)) {
                     $posts = array_merge($posts, $className::fetchRoots($queryArgs)->posts);
                 }
             }
         }
-        $defaults             = array('post_parent' => $this->ID);
-        $queryArgs            = wp_parse_args($queryArgs, $defaults);
-        $children             = static::fetchAll($queryArgs);
-        $children->posts      = array_merge($children->posts, $posts);
+        $defaults = ['post_parent' => $this->ID];
+        $queryArgs = wp_parse_args($queryArgs, $defaults);
+        $children = static::fetchAll($queryArgs);
+        $children->posts = array_merge($children->posts, $posts);
         $children->post_count = count($children->posts);
         return $children;
     }
@@ -655,10 +542,10 @@ abstract class WordpressPost
     /**
      * @return array Class names of WordpressPost types having this post as their parent
      */
-    public function childPostClassNames()
+    public function childPostClassNames() : array
     {
         $manager = PostTypeManager::get();
-        $names   = array();
+        $names = [];
         foreach ($manager->getPostTypes() as $postType) {
             $class = $manager->getClassName($postType);
             if ($class::postTypeParentId() == $this->ID || $class::postTypeParentSlug() == $this->post_name) {
@@ -669,43 +556,22 @@ abstract class WordpressPost
     }
 
     /**
-     * @return array Post types of WordpressPost types that are connected to this post type
-     */
-    public static function connectedPostTypes()
-    {
-        return PostTypeManager::get()->getConnectedPostTypes(self::postType());
-    }
-
-    /**
-     * @return array Class names of WordpressPost types that are connected to this post type
-     */
-    public static function connectedClassNames()
-    {
-        $manager = PostTypeManager::get();
-        $names   = array();
-        foreach (self::connectedPostTypes() as $postType) {
-            $names[] = $manager->getClassName($postType);
-        }
-        return $names;
-    }
-
-    /**
      * Executes a wordpress function, setting $this as the global $post first, then resets the global post data.
      * Expects the first argument to be the function, followed by any arguments
      *
      * @return mixed
      */
-    protected function callGlobalPost()
+    protected function callGlobalPost() : mixed
     {
         global $post;
         $prevPost = $post;
 
         // Get requested WordPress function and arguments
-        $args     = func_get_args();
+        $args = func_get_args();
         $callback = array_shift($args);
 
         // Set up global variables to support WP function execution
-        $post = $this->get_post();
+        $post = $this->getWpPost();
         setup_postdata($post);
 
         // Call the WordPress function
@@ -718,7 +584,10 @@ abstract class WordpressPost
         return $returnVal;
     }
 
-    public function wp_author()
+    /**
+     * @return string|null The author's display name.
+     */
+    public function wpAuthorName() : ?string
     {
         return $this->callGlobalPost('get_the_author');
     }
@@ -726,7 +595,7 @@ abstract class WordpressPost
     /**
      * @return string the Robots meta tag, should be NOINDEX, NOFOLLOW for some post types
      */
-    public function robots()
+    public function robots() : string
     {
         return "";
     }
@@ -737,161 +606,65 @@ abstract class WordpressPost
      * @param bool $requireLoggedIn
      * @return string
      */
-    public function editUrl($requireLoggedIn = false)
+    public function editUrl($requireLoggedIn = false) : string
     {
         $url = get_edit_post_link($this->ID, '');
         if (!$url && !$requireLoggedIn) {
             $post_type_object = get_post_type_object(static::postType());
-            $url              = admin_url(sprintf($post_type_object->_edit_link . '&action=edit', $this->ID));
+            $url = admin_url(sprintf($post_type_object->_edit_link . '&action=edit', $this->ID));
         }
         return $url;
-    }
-
-    /**
-     * Use this with attachment posts to convert the front page of a PDF to a PNG, and create a corresponding attachment.
-     * Typical usage (requires project to define xxAttachment class):
-     * add_action('add_attachment', function($id) {
-     *     //use constructor rather than factory to get around auto-draft post_status issue
-     *     $attachment = new xxAttachment($id);
-     *     $attachment->generatePdfImage();
-     * });
-     * IMPORTANT!!! in php-fpm.conf, the env[PATH] = /usr/local/bin:/usr/bin:/bin needs to be uncommented for this to work
-     *
-     * @param string $extension
-     * @param string $namePrefix
-     * @param bool $logDebug
-     */
-    public function generatePdfImage($extension = 'png', $namePrefix = 'pdf-image-', $logDebug = false)
-    {
-        $debug = @fopen(get_stylesheet_directory() . '/debug.txt', 'a');
-        $log   = function ($message, $force = false) use ($debug, $logDebug) {
-            if ($debug && ($logDebug || $force)) {
-                @fwrite($debug, '[' . date('Y-m-d H:i:s') . "]: $message\n");
-            }
-        };
-        $log('checking for suitability (' . $this->ID . ", $extension, $namePrefix)");
-        // IMAGEMAGICK_CONVERT should be defined in wp-config.php
-        if (defined('IMAGEMAGICK_CONVERT') && IMAGEMAGICK_CONVERT && $this->post_mime_type == 'application/pdf') {
-            $log('attempting conversion');
-
-            $sourceFile = get_attached_file($this->ID);
-            $targetFile = str_replace('.pdf', '.' . $extension, $sourceFile);
-
-            // Converted image will have a fixed size (-extent), centred (-gravity), with the aspect ratio respected (-thumbnail), and
-            // excess space filled with transparent colour (-background)
-            $size = '260x310';
-            $args = array(
-                '-density 96',
-                '-quality 85',
-                '-thumbnail ' . $size,
-//				'-extent ' . $size,
-                '-gravity center',
-                '-background transparent',
-                escapeshellarg($sourceFile . '[0]'),
-                escapeshellarg($targetFile)
-            );
-            $cmd  = IMAGEMAGICK_CONVERT . ' ' . implode(' ', $args) . ' 2>&1';
-            $out  = exec($cmd, $output, $returnVar);
-
-            $log($cmd);
-            // if the convert fails, log the output
-            if ($returnVar != 0) {
-                $log('conversion failed', true);
-                $log('out: ' . $out, true);
-                $log('output: ' . print_r($output, true), true);
-                $log('returnVar: ' . $returnVar, true);
-            } else {
-                //create wordpress attachment for thumbnail image
-                $attachmentSlug = $namePrefix . $this->ID;
-                $log('creating attachment: ' . $attachmentSlug);
-                $targetAttachment = self::fetchBySlug($attachmentSlug);
-                if ($targetAttachment) {
-                    $log('deleting existing attachment: ' . $targetAttachment->ID);
-                    wp_delete_attachment($targetAttachment->ID);
-                }
-                $id = wp_insert_attachment(array(
-                    'post_title' => '[Thumb] ' . $this->title(),
-                    'post_name' => $attachmentSlug,
-                    'post_content' => '',
-                    'post_mime_type' => 'image/' . $extension
-                ), $targetFile);
-                $log('created new attachment: ' . print_r($id, true));
-            }
-        } else {
-            if (!defined('IMAGEMAGICK_CONVERT')) {
-                $log('ignoring: IMAGEMAGICK_CONVERT not defined');
-            } else {
-                $log('ignoring: post type is ' . $this->post_mime_type);
-            }
-        }
-        @fclose($debug);
     }
 
 #endregion
 
 #region HTML Template helpers
 
-    public function htmlLink($attrs = array())
+    public function htmlLink($attrs = []) : string
     {
-        $attrString = self::getAttributeString($attrs);
-        return '<a href="' . $this->permalink() . '" ' . $attrString . '>' . $this->title() . "</a>";
+        $attrs['href'] = $this->permalink();
+        $attrString = StringUtils::makeAttributeString($attrs);
+        return "<a {$attrString}>" . $this->title() . '</a>';
     }
 
     /**
-     * Turns an array of key=>value attibutes into html string
-     * @static
-     *
-     * @param array $attrs key=>value attributes
-     * @return string HTML for including in an element
+     * @return string|null
      */
-    public static function getAttributeString($attrs)
-    {
-        $attributeString = '';
-        foreach ($attrs as $key => $value) {
-            $attributeString .= " $key='$value' ";
-        }
-        return $attributeString;
-    }
-
-    /**
-     * @return WordpressTheme
-     */
-    public static function theme()
-    {
-        return WordpressTheme::getInstance();
-    }
-
-    function htmlAuthorLink()
+    public function htmlAuthorLink() : ?string
     {
         return $this->callGlobalPost('get_the_author_link');
     }
 
     /**
-     * @return bool true if this is an ancestor of the page currently being viewed
+     * @return bool true if this is the page currently being viewed
      */
-    public function isCurrentPage()
+    public function isCurrentPage() : bool
     {
         $x = WordpressPost::getQueriedObject();
-        return (isset($x) && $x->ID == $this->ID);
+        return (isset($x) && $x->ID === $this->ID);
+    }
+
+    /**
+     * @return bool true if this is the direct parent of the page currently being viewed
+     */
+    public function isCurrentPageParent() : bool
+    {
+        $x = WordpressPost::getQueriedObject();
+        if (empty($x)) {
+            return false;
+        }
+        $parent = $this->parent();
+        return $parent && $parent->ID === $x->ID;
     }
 
     /**
      * @return bool true if this is an ancestor of the page currently being viewed
      */
-    public function isCurrentPageParent()
-    {
-        $x = WordpressPost::getQueriedObject();
-        return (isset($x) && ($x->post_parent == $this->ID || $x->postTypeParentId() == $this->ID || $x->postTypeParentSlug() == $this->post_name));
-    }
-
-    /**
-     * @return bool true if this is an ancestor of the page currently being viewed
-     */
-    public function isCurrentPageAncestor()
+    public function isCurrentPageAncestor() : bool
     {
         $x = WordpressPost::getQueriedObject();
         while (isset($x) && $x) {
-            if ($x->ID == $this->ID) {
+            if ($x->ID === $this->ID) {
                 return true;
             }
             $x = $x->parent();
@@ -900,59 +673,73 @@ abstract class WordpressPost
     }
 
 
-    protected function featuredImageAttachmentId()
+    /**
+     * Gets the ID of the image used as the 'featured image' for this post (requires 'thumbnail' to be supported by
+     * the post type)
+     * @return int|bool
+     */
+    protected function featuredImageAttachmentId() : int|bool
     {
-        $image = $this->metadata('featured_image', true) ?: $this->metadata('image', true);
-
-        if ($image) {
-            if (is_numeric($image)) {
-                return $image;
-            }
-            return $image['id'];
-        }
-        return false;
+        return get_post_thumbnail_id($this->getWpPost());
     }
 
-    public function featuredImageUrl($image_size = 'thumbnail')
+    public function featuredImageUrl(string $imageSize = 'thumbnail') : ?string
     {
-        $image = wp_get_attachment_image_src($this->featuredImageAttachmentId(), $image_size);
+        $image = wp_get_attachment_image_src($this->featuredImageAttachmentId(), $imageSize);
         return $image ? $image[0] : null;
     }
 
-    public function featuredImage($size = 'thumbnail', $attrs = array())
+    /**
+     * @param string $size
+     * @param string[] $attrs
+     * @return string HTML img element or empty string on failure.
+     */
+    public function featuredImage(string $size = 'thumbnail', array $attrs = []) : string
     {
         return wp_get_attachment_image($this->featuredImageAttachmentId(), $size, 0, $attrs);
     }
 
     /**
-     * Gets the list of elements that comprise a breadcrumb trail
+     * Gets the list of elements that comprise a breadcrumb trail, each consisting of a url and title.
+     * If $includeSelf is true, the title of this post is appended (as a string, not array)
      */
-    function breadcrumbs()
+    public function breadcrumbs($includeSelf = true) : array
     {
-        $ancestors = array($this->title());
-        $current   = $this;
-        while ($parent = $current->parent()) {
-            $ancestors[] = $parent->htmlLink();
-            $current     = $parent;
+        $trail = [
+            [home_url(), 'Home']
+        ];
+
+        $parents = $this->parents();
+        $parents = array_filter($parents);
+
+        if ($parents) {
+            $homeId = intval(get_option('page_on_front'));
+            foreach ($parents as $parent) {
+                if ($parent->ID !== $homeId) {
+                    $trail[] = [$parent->permalink(), $parent->title()];
+                }
+            };
         }
-        $home = self::fetchHomepage();
-        if ($home && $this->ID != $home->ID) {
-            $ancestors[] = $home->htmlLink();
+
+        if ($includeSelf) {
+            $trail[] = $this->title();
         }
-        return array_reverse($ancestors);
+
+        return $trail;
     }
 
     /**
+     * Gets all attachments linked to this post
      * @return OowpQuery
      */
-    public function attachments()
+    public function attachments() : OowpQuery
     {
-        $queryArgs = array(
+        $queryArgs = [
             'post_type' => 'attachment',
             'numberposts' => -1,
             'post_status' => 'inherit',
             'post_parent' => $this->ID
-        );
+        ];
         return new OowpQuery($queryArgs);
     }
 
@@ -966,39 +753,40 @@ abstract class WordpressPost
      *
      * @return array Array of arguments used by register_post
      */
-    static function getRegistrationArgs()
+    public static function getRegistrationArgs() : array
     {
-        return array(
+        return [
             'labels' => AdminUtils::generateLabels(static::friendlyName(), static::friendlyNamePlural()),
             'public' => true,
             'has_archive' => true,
-            'rewrite' => array(
+            'rewrite' => [
                 'slug' => static::postType(),
                 'with_front' => false
-            ),
+            ],
             'show_ui' => true,
             'show_in_rest' => true,
-            'supports' => array(
+            'supports' => [
                 'title',
                 'editor',
                 'revisions',
-            )
-        );
+            ]
+        ];
     }
 
     /**
      * Use this in combination with getCustomAdminColumnValue to add custom columns to the wp admin interface for
      * the post. Typically you'll want to modify the existing default columns passed in as `$helper`, using
-     * { @see ArrayHelper::insertAfter() }.
+     * { @param ArrayHelper $helper Contains the default columns
+     * @see ArrayHelper::insertAfter() }.
      *
      * e.g. $helper->insertAfter('title', 'name', 'Name');
      *
      * @static
      *
-     * @param ArrayHelper $helper Contains the default columns
      */
-    static function addCustomAdminColumns(ArrayHelper $helper)
-    { /* do nothing */
+    public static function addCustomAdminColumns(ArrayHelper $helper) : void
+    {
+        /* do nothing */
     }
 
     /**
@@ -1007,7 +795,7 @@ abstract class WordpressPost
      * @param string $column The name of the column, as given in addCustomAdminColumns
      * @return string
      */
-    function getCustomAdminColumnValue($column)
+    public function getCustomAdminColumnValue(string $column) : string
     {
         return '';
     }
@@ -1018,29 +806,15 @@ abstract class WordpressPost
      *
      * @return null|WordpressPost
      */
-    static function getQueriedObject()
+    public static function getQueriedObject() : ?WordpressPost
     {
         global $ooQueriedObject;
         if (!isset($ooQueriedObject)) {
             global $wp_the_query;
-            $id              = $wp_the_query->get_queried_object_id();
+            $id = $wp_the_query->get_queried_object_id();
             $ooQueriedObject = $id ? WordpressPost::fetchById($id) : null;
         }
         return $ooQueriedObject;
-    }
-
-    /**
-     * @static Creates a p2p connection to another post type
-     *
-     * @param string $targetPostType The post_type of the post type you want to connect to
-     * @param array $parameters These can overwrite the defaults. Do not specify connection_name, use $connectionName instead
-     * @param string $connectionName
-     * @return mixed
-     */
-    static function registerConnection($targetPostType, $parameters = array(), $connectionName = null)
-    {
-        return PostTypeManager::get()
-            ->registerConnection(self::postType(), $targetPostType, $parameters, $connectionName);
     }
 
     /**
@@ -1050,7 +824,7 @@ abstract class WordpressPost
      * @param object|int $data
      * @return WordpressPost|null
      */
-    public static function createWordpressPost($data = null)
+    public static function createWordpressPost(mixed $data = null) : ?WordpressPost
     {
         if ($data) {
             if ($data instanceof WordpressPost) {
@@ -1060,13 +834,12 @@ abstract class WordpressPost
             if ($postData) {
                 $className = PostTypeManager::get()->getClassName($postData->post_type);
                 if (!$className) {
-                    $className = 'Outlandish\Wordpress\Oowp\PostTypes\MiscPost';
+                    $className = MiscPost::class;
                 }
                 if ($postData instanceof $className) {
                     return $postData;
-                } else {
-                    return new $className($postData);
                 }
+                return new $className($postData);
             }
         }
         return null;
@@ -1079,20 +852,22 @@ abstract class WordpressPost
      * @param int|int[] $ids
      * @return WordpressPost|OowpQuery|null
      */
-    public static function fetchById($ids)
+    public static function fetchById(array $ids) : WordpressPost|OowpQuery|null
     {
         if (is_array($ids) && $ids) {
-            return new OowpQuery(array('post__in' => $ids));
-        } elseif ($ids) {
-            return static::fetchOne(array('p' => $ids));
-        } else {
-            throw new \Exception("no IDs supplied to WordpressPost::fetchById()");
+            return new OowpQuery(['post__in' => $ids]);
         }
+
+        if ($ids) {
+            return static::fetchOne(['p' => $ids]);
+        }
+
+        throw new \Exception("no IDs supplied to WordpressPost::fetchById()");
     }
 
-    public static function fetchBySlug($slug)
+    public static function fetchBySlug($slug) : ?WordpressPost
     {
-        return static::fetchOne(array('name' => $slug));
+        return static::fetchOne(['name' => $slug]);
     }
 
     /**
@@ -1101,18 +876,19 @@ abstract class WordpressPost
      * @param array $queryArgs Accepts a wp_query $queryArgs array which overwrites the defaults
      * @return OowpQuery
      */
-    public static function fetchAll($queryArgs = array())
+    public static function fetchAll(array $queryArgs = []) : OowpQuery
     {
-        $defaults = array(
+        $defaults = [
             'post_type' => static::getSelfPostTypeConstraint()
-        );
+        ];
+
         if (static::isHierarchical()) {
             $defaults['orderby'] = 'menu_order';
-            $defaults['order']   = 'asc';
+            $defaults['order'] = 'asc';
         }
 
         $queryArgs = wp_parse_args($queryArgs, $defaults);
-        $query     = new OowpQuery($queryArgs);
+        $query = new OowpQuery($queryArgs);
 
         return $query;
     }
@@ -1124,19 +900,11 @@ abstract class WordpressPost
      * @param array $queryArgs Accepts a wp_query $queryArgs array which overwrites the defaults
      * @return int[]
      */
-    public static function fetchIds($queryArgs = [])
+    public static function fetchIds(array $queryArgs = []): array
     {
         $queryArgs['fields'] = 'ids';
-        $query               = static::fetchAll($queryArgs);
+        $query = static::fetchAll($queryArgs);
         return $query->posts;
-    }
-
-    /**
-     * @deprecated
-     */
-    static function fetchAllQuery($queryArgs = array())
-    {
-        return static::fetchAll($queryArgs);
     }
 
     /**
@@ -1144,12 +912,20 @@ abstract class WordpressPost
      *
      * @return null|WordpressPost
      */
-    static function fetchHomepage()
+    public static function fetchHomepage(): ?WordpressPost
     {
         $key = 'homepage';
         if (!array_key_exists($key, WordpressPost::$_staticCache)) {
-            $id                                = get_option('page_on_front');
-            WordpressPost::$_staticCache[$key] = $id ? self::fetchById($id) : null;
+            $id = get_option('page_on_front');
+            $post = null;
+            if ($id) {
+                try {
+                    $post = static::fetchById($id);
+                } catch (\Exception $ex) {
+                    // do nothing
+                }
+            }
+            WordpressPost::$_staticCache[$key] = $post;
         }
         return WordpressPost::$_staticCache[$key];
     }
@@ -1157,7 +933,7 @@ abstract class WordpressPost
     /**
      * @return bool True if this is the site homepage
      */
-    public function isHomepage()
+    public function isHomepage(): bool
     {
         return $this->ID == get_option('page_on_front');
     }
@@ -1169,13 +945,13 @@ abstract class WordpressPost
      * @param array $queryArgs
      * @return null|WordpressPost
      */
-    static function fetchOne($queryArgs)
+    public static function fetchOne(array $queryArgs): ?WordpressPost
     {
         $queryArgs['posts_per_page'] = 1; // Force-override this rather than only setting a default.
-        $defaults                    = array(
+        $defaults = [
             'post_type' => static::getSelfPostTypeConstraint()
-        );
-        $queryArgs                   = wp_parse_args($queryArgs, $defaults);
+        ];
+        $queryArgs = wp_parse_args($queryArgs, $defaults);
 
         $query = new OowpQuery($queryArgs);
         return $query->posts ? $query->post : null;
@@ -1187,7 +963,7 @@ abstract class WordpressPost
      * @param array $queryArgs
      * @return OowpQuery
      */
-    static function fetchRoots($queryArgs = array())
+    public static function fetchRoots(array $queryArgs = []): OowpQuery
     {
         // TODO Perhaps the post_parent should be set properly in the database.
         //$queryArgs['post_parent'] = static::postTypeParentId();
@@ -1199,10 +975,10 @@ abstract class WordpressPost
     /**
      * @static
      *
-     * @param string $postType
+     * @param ?string $postType
      * @return bool Whether or not the post type is declared as hierarchical
      */
-    static function isHierarchical($postType = null)
+    public static function isHierarchical(?string $postType = null): bool
     {
         if (!$postType) {
             $postType = static::postType();
@@ -1210,20 +986,23 @@ abstract class WordpressPost
         return is_post_type_hierarchical($postType);
     }
 
-    private static function getSelfPostTypeConstraint()
+    /**
+     * Gets either this class's post type, or all registered post types, depending on where this was called from
+     * @return string[]|string
+     */
+    private static function getSelfPostTypeConstraint(): array|string
     {
-        // If `get*()` methods are called on abstract post classes directly (not a registered post subclass), do not
-        // constrain the type of posts returned unless specified.
-        if (!PostTypeManager::get()->postClassIsRegistered(static::class)) {
-            return 'any';
+        $postTypeManager = PostTypeManager::get();
+
+        // If `get*()` methods are called on abstract post classes directly (not a registered post subclass), restrict
+        // to all registered oowp post types.
+        if (!$postTypeManager->postClassIsRegistered(static::class)) {
+            return $postTypeManager->getPostTypes();
         }
 
         // Otherwise, default to constraining to the type associated with the class on which the
         // method was invoked.
         return static::postType();
     }
-
 #endregion
-
-
 }

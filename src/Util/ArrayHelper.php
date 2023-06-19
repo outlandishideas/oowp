@@ -2,10 +2,13 @@
 
 namespace Outlandish\Wordpress\Oowp\Util;
 
-class ArrayHelper {
-    public $array = array();
+class ArrayHelper
+{
+    /** @var array */
+    public array $array = [];
 
-    function __construct($array = array()) {
+    public function __construct(array $array = [])
+    {
         $this->array = $array;
     }
 
@@ -16,23 +19,27 @@ class ArrayHelper {
      * @param string $beforeKey
      * @param string $key
      * @param mixed $value
+     * @return string The inserted key
      */
-    function insertBefore($beforeKey, $key, $value) {
-        $newArray = array();
+    public function insertBefore(string $beforeKey, string $key, mixed $value) : string
+    {
+        $newArray = [];
         if (array_key_exists($beforeKey, $this->array)) {
-            foreach ($this->array as $a=>$b) {
-                if ($a == $beforeKey) {
+            foreach ($this->array as $a => $b) {
+                if ($a === $beforeKey) {
                     $newArray[$key] = $value;
                 }
                 $newArray[$a] = $b;
             }
         } else {
             $newArray[$key] = $value;
-            foreach ($this->array as $a=>$b) {
+            foreach ($this->array as $a => $b) {
                 $newArray[$a] = $b;
             }
         }
         $this->array = $newArray;
+
+        return $key;
     }
 
     /**
@@ -42,13 +49,15 @@ class ArrayHelper {
      * @param string $afterKey
      * @param string $key
      * @param mixed $value
+     * @return string The inserted key
      */
-    function insertAfter($afterKey, $key, $value) {
+    public function insertAfter(string $afterKey, string $key, mixed $value) : string
+    {
         if (array_key_exists($afterKey, $this->array)) {
-            $newArray = array();
-            foreach ($this->array as $a=>$b) {
+            $newArray = [];
+            foreach ($this->array as $a => $b) {
                 $newArray[$a] = $b;
-                if ($a == $afterKey) {
+                if ($a === $afterKey) {
                     $newArray[$key] = $value;
                 }
             }
@@ -56,5 +65,7 @@ class ArrayHelper {
         } else {
             $this->array[$key] = $value;
         }
+
+        return $key;
     }
 }

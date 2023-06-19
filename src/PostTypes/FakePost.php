@@ -29,7 +29,7 @@ class FakePost extends WordpressPost
         parent::__construct($postArray);
     }
 
-    public function permalink($leaveName = false)
+    public function permalink(bool $leaveName = false) : string
     {
         if (!empty($this->permalink)) {
             return $this->permalink;
@@ -40,7 +40,7 @@ class FakePost extends WordpressPost
     /**
      * @return string the Robots meta tag, should be NOINDEX, NOFOLLOW for some post types
      */
-    public function robots()
+    public function robots() : string
     {
         return "NOINDEX, NOFOLLOW";
     }

@@ -3,10 +3,9 @@
 Plugin Name: Object-oriented WordPress (OOWP)
 Plugin URI: https://github.com/outlandishideas/oowp
 Description: OOWP is a tool for WordPress theme developers that makes templating in WordPress more sensible. It replaces [The Loop](https://codex.wordpress.org/The_Loop) and contextless functions such as the_title() with object-oriented methods such as $event->title(), $event->parent() and $event->getConnected('people').
-Version: 3.0.3
+Version: 4.0.0
 */
 
-use Outlandish\Wordpress\Oowp\Shortcodes\ListPostsShortcode;
 use Outlandish\Wordpress\Oowp\Util\AdminUtils;
 
 AdminUtils::customiseAdmin();
@@ -67,7 +66,3 @@ if (!function_exists('unregister_taxonomy')) {
         return true;
     }
 }
-
-add_shortcode(ListPostsShortcode::NAME, function ($params, $content) {
-    ListPostsShortcode::apply($params, $content);
-});
