@@ -118,6 +118,15 @@ abstract class WordpressPost
     }
 
     /**
+     * @deprecated see getWpPost
+     * @return \WP_Post
+     */
+    public function get_post() : \WP_Post // phpcs:ignore PSR1.Methods.CamelCapsMethodName
+    {
+        return $this->getWpPost();
+    }
+
+    /**
      * Sets the underlying WP_Post as the global post
      */
     public function setAsGlobal() : void
@@ -455,12 +464,12 @@ abstract class WordpressPost
         return strtotime($this->post_date);
     }
 
-    public function excerpt(int $chars = 400, ?string $stuff = null) : string
+    public function excerpt(int $chars = 400, ?string $content = null) : string
     {
-        if (empty($stuff)) {
-            $stuff = $this->content();
+        if (empty($content)) {
+            $content = $this->content();
         }
-        $content = str_replace("<!--more-->", '<span id="more-1"></span>', $stuff);
+        $content = str_replace("<!--more-->", '<span id="more-1"></span>', $content);
         //try to split on more link
         $parts = preg_split('|<span id="more-\d+"></span>|i', $content);
         $content = $parts[0];
@@ -690,13 +699,13 @@ abstract class WordpressPost
     }
 
     /**
-     * @param string $size
+     * @param string $imageSize
      * @param string[] $attrs
      * @return string HTML img element or empty string on failure.
      */
-    public function featuredImage(string $size = 'thumbnail', array $attrs = []) : string
+    public function featuredImage(string $imageSize = 'thumbnail', array $attrs = []) : string
     {
-        return wp_get_attachment_image($this->featuredImageAttachmentId(), $size, 0, $attrs);
+        return wp_get_attachment_image($this->featuredImageAttachmentId(), $imageSize, 0, $attrs);
     }
 
     /**
@@ -852,7 +861,7 @@ abstract class WordpressPost
      * @param int|int[] $ids
      * @return WordpressPost|OowpQuery|null
      */
-    public static function fetchById(array $ids) : WordpressPost|OowpQuery|null
+    public static function fetchById(mixed $ids) : WordpressPost|OowpQuery|null
     {
         if (is_array($ids) && $ids) {
             return new OowpQuery(['post__in' => $ids]);

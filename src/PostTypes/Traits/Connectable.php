@@ -10,12 +10,12 @@ use Outlandish\Wordpress\Oowp\PostTypes\WordpressPost;
  * Trait to be used in wordpress post classes when making use of posts-to-posts plugin.
  * Adds functionality for registering, creating and querying connections
  */
-abstract class Connectable
+trait Connectable
 {
     /**
      * @param int|object|WordpressPost $post
      * @param array $meta
-     * @param string $connectionName
+     * @param ?string $connectionName
      */
     public function connect(mixed $post, array $meta = [], ?string $connectionName = null) : void
     {
@@ -50,8 +50,9 @@ abstract class Connectable
         bool $hierarchical = false,
         string|array $connectionName = null
     ) : null|OowpQuery|WordpressPost {
-        if (function_exists('p2p_register_connection_type')) {
-            return null;
+        if (!function_exists('p2p_register_connection_type')) {
+            // ensure return type is valid even if posts-to-posts isn't present
+            return $single ? null : new OowpQuery(null);
         }
 
         if (!is_array($targetPostType)) {

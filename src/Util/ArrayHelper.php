@@ -68,4 +68,12 @@ class ArrayHelper
 
         return $key;
     }
+
+    public function insertAllAfter(string $afterKey, array $items) : void
+    {
+        $last = $afterKey;
+        foreach ($items as $key => $value) {
+            $last = $this->insertAfter($last, $key, $value);
+        }
+    }
 }
