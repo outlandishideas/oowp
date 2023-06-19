@@ -3,19 +3,19 @@
 namespace Outlandish\Wordpress\Oowp;
 
 use Outlandish\Wordpress\Oowp\PostTypes\WordpressPost;
+use Traversable;
 
+/**
+ * @property $posts WordpressPost[]
+ * @property $post WordpressPost
+ * @property $queried_object WordpressPost
+ */
 class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \Countable
 {
-
-    /**
-     * @var WordpressPost[]
-     */
-    var $posts;
-
     /**
      * @param string|array $query
      */
-    function __construct($query = '')
+    public function __construct(mixed $query = '')
     {
         $defaults = [
             'posts_per_page' => -1,
@@ -40,32 +40,32 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 
     /* Interfaces */
 
-    public function getIterator()
+    public function getIterator() : Traversable
     {
         return new \ArrayIterator($this->posts);
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset) : bool
     {
         return isset($this->posts[$offset]);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset) : mixed
     {
         return $this->posts[$offset];
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value) : void
     {
         $this->posts[$offset] = $value;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset) : void
     {
         unset($this->posts[$offset]);
     }
 
-    public function count()
+    public function count() : int
     {
         return count($this->posts);
     }
@@ -74,7 +74,7 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
      * Stores $this as the global $wp_query, executes the passed-in WP function, then reverts $wp_query
      * @return mixed
      */
-    protected function callGlobalQuery()
+    protected function callGlobalQuery() : mixed
     {
         global $wp_query;
         $args      = func_get_args();
@@ -87,39 +87,13 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
     }
 
     /**
-     * Prints the prev/next links for this query
-     * @param string $sep
-     * @param string $preLabel
-     * @param string $nextLabel
-     */
-    public function postsNavLink($sep = '', $preLabel = '', $nextLabel = '')
-    {
-        $this->callGlobalQuery('posts_nav_link', $sep, $preLabel, $nextLabel);
-    }
-
-    public function queryVars()
-    {
-        return new QueryVars($this->query_vars);
-    }
-
-    public function sortByIds($ids)
-    {
-        $indexes = array_flip($ids);
-        usort($this->posts, function ($a, $b) use ($indexes) {
-            $aIndex = $indexes[$a->ID];
-            $bIndex = $indexes[$b->ID];
-            return $aIndex < $bIndex ? -1 : 1;
-        });
-    }
-
-    /**
      * Convert WP_Post objects to WordpressPost
      * If $query['fields'] is 'ids', then this will just return the post IDs
      * If $query['fields'] is 'id->parent', then this will return an array of objects that represents the parent-child relationships
      * See https://developer.wordpress.org/reference/classes/wp_query/#return-fields-parameter
      * @return WordpressPost[]|int[]|\stdClass[]
      */
-    public function &get_posts()
+    public function get_posts() : array // phpcs:ignore PSR1.Methods.CamelCapsMethodName
     {
         parent::get_posts();
 

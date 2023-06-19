@@ -4,9 +4,8 @@ namespace Outlandish\Wordpress\Oowp\PostTypes;
 
 class OowpPage extends WordpressPost
 {
-    static function postType()
+    public static function postType() : string
     {
         return 'page';
     }
-
 }

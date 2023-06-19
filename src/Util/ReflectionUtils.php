@@ -10,12 +10,12 @@ class ReflectionUtils
      * would return 'theFunction'
      * @return string
      */
-    public static function getCaller()
+    public static function getCaller() : string
     {
         return self::getCaller_internal(__FUNCTION__, 2);
     }
 
-    public static function getCaller_internal($function, $diff)
+    public static function getCaller_internal(string $function, int $diff) : string
     {
 
         $stack     = debug_backtrace();
@@ -31,6 +31,4 @@ class ReflectionUtils
 
         return $caller;
     }
-
-
 }

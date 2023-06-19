@@ -2,16 +2,10 @@
 
 namespace Outlandish\Wordpress\Oowp\Views;
 
-use Outlandish\Wordpress\Oowp\WordpressTheme;
-
 abstract class OowpView
 {
-    /** @var WordpressTheme */
-    public $theme;
-
     public function __construct($args = [])
     {
-        $this->theme = WordpressTheme::getInstance();
         foreach ($args as $name => $value) {
             $this->$name = $value;
         }
@@ -25,5 +19,5 @@ abstract class OowpView
         return $html;
     }
 
-    public abstract function render($args = []);
+    abstract public function render($args = []);
 }

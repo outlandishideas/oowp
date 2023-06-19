@@ -16,6 +16,4 @@ abstract class PostView extends OowpView
         global $post;
         $this->post = WordpressPost::createWordpressPost($post);
     }
-
-
 }

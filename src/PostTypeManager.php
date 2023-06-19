@@ -2,13 +2,15 @@
 
 namespace Outlandish\Wordpress\Oowp;
 
+use Outlandish\Wordpress\Oowp\PostTypes\OowpPage;
+use Outlandish\Wordpress\Oowp\PostTypes\OowpPost;
 use Outlandish\Wordpress\Oowp\PostTypes\WordpressPost;
 
 class PostTypeManager
 {
-    protected $registered = false;
-    protected $postTypes = [];
-    protected $connections = [];
+    protected bool $registered = false;
+    protected array $postTypes = [];
+    protected array $connections = [];
 
     /**
      * This base PostTypeManager is expected to be used with a singleton pattern, so directly instantiating it
@@ -21,14 +23,14 @@ class PostTypeManager
     {
     }
 
-    protected static $instance;
+    protected static PostTypeManager $instance;
 
     /**
      * Singleton getter that now allows for subclasses without a copy of the method (via `static::`).
      *
      * @return PostTypeManager  This class or a subclass.
      */
-    public static function get()
+    public static function get() : PostTypeManager
     {
         if (!static::$instance) {
             static::$instance = new static();
@@ -42,9 +44,9 @@ class PostTypeManager
      * @param string|WordpressPost $className
      * @throws \RuntimeException if $className is not a subclass of WordpressPost
      */
-    protected function registerPostType($className)
+    protected function registerPostType(string $className) : void
     {
-        if (!is_subclass_of($className, 'Outlandish\Wordpress\Oowp\PostTypes\WordpressPost')) {
+        if (!is_subclass_of($className, WordpressPost::class)) {
             throw new \RuntimeException($className . ' is not a subclass of WordpressPost');
         }
 
@@ -74,7 +76,7 @@ class PostTypeManager
      * @param string[] $classNames
      * @throws \Exception
      */
-    public function registerPostTypes($classNames)
+    public function registerPostTypes(array $classNames) : void
     {
         if ($this->registered) {
             throw new \Exception('Can only register post types once');
@@ -83,8 +85,8 @@ class PostTypeManager
         /** @var WordpressPost[]|string[] $classNames */
 
         // add the built-in post/page classes after all of the others
-        $classNames[] = 'Outlandish\Wordpress\Oowp\PostTypes\OowpPage';
-        $classNames[] = 'Outlandish\Wordpress\Oowp\PostTypes\OowpPost';
+        $classNames[] = OowpPage::class;
+        $classNames[] = OowpPost::class;
         $classNames   = array_unique($classNames);
 
         // register all classes
@@ -123,7 +125,7 @@ class PostTypeManager
      * @param string $postType
      * @return WordpressPost|string
      */
-    public function getClassName($postType)
+    public function getClassName(string $postType) : ?string
     {
         $classNames = array_flip($this->postTypes);
         return array_key_exists($postType, $classNames) ? $classNames[$postType] : null;
@@ -135,7 +137,7 @@ class PostTypeManager
      * @param string $className Fully-qualified name of a class which might be a post type.
      * @return bool
      */
-    public function postClassIsRegistered($className)
+    public function postClassIsRegistered(string $className) : bool
     {
         if (!class_exists($className)) {
             return false;
@@ -149,7 +151,7 @@ class PostTypeManager
      * @param string $postType
      * @return bool
      */
-    public function postTypeIsRegistered($postType)
+    public function postTypeIsRegistered(string $postType) : bool
     {
         return in_array($postType, $this->postTypes);
     }
@@ -158,7 +160,7 @@ class PostTypeManager
      * Gets all of the post types registered via registerPostTypes()
      * @return string[]
      */
-    public function getPostTypes()
+    public function getPostTypes() : array
     {
         return array_values($this->postTypes);
     }
@@ -168,10 +170,10 @@ class PostTypeManager
      * @param string $postType
      * @param string $targetPostType
      * @param array $parameters
-     * @param string $connectionName
+     * @param ?string $connectionName
      * @return bool|object|null
      */
-    public function registerConnection($postType, $targetPostType, $parameters, $connectionName = null)
+    public function registerConnection(string $postType, string $targetPostType, array $parameters, ?string $connectionName = null) : object|bool|null
     {
         if (!function_exists('p2p_register_connection_type')) {
             return null;
@@ -185,13 +187,13 @@ class PostTypeManager
             return $this->connections[$connectionName]->connection;
         }
 
-        $defaults = array(
+        $defaults = [
             'name' => $connectionName,
             'from' => $postType,
             'to' => $targetPostType,
             'cardinality' => 'many-to-many',
             'reciprocal' => true
-        );
+        ];
 
         $parameters = wp_parse_args($parameters, $defaults);
         $connection = p2p_register_connection_type($parameters);
@@ -210,10 +212,10 @@ class PostTypeManager
      * @param string $targetType
      * @return string
      */
-    public function generateConnectionName($postType, $targetType)
+    public function generateConnectionName(string $postType, string $targetType) : string
     {
         // order them alphabetically, so that it doesn't matter which order they were supplied
-        $types = array($postType, $targetType);
+        $types = [$postType, $targetType];
         sort($types);
         return implode('_', $types);
     }
@@ -223,7 +225,7 @@ class PostTypeManager
      * @param string $postType
      * @return string[]
      */
-    public function getConnectedPostTypes($postType)
+    public function getConnectedPostTypes(string $postType) : array
     {
         $types = [];
         foreach ($this->connections as $connection) {
@@ -243,7 +245,7 @@ class PostTypeManager
      * @param string|string[] $postTypeB
      * @return string[]
      */
-    public function getConnectionNames($postTypeA, $postTypeB)
+    public function getConnectionNames(string|array $postTypeA, string|array $postTypeB) : array
     {
         $connectionNames = [];
         if ($postTypeA && $postTypeB) {
@@ -254,12 +256,16 @@ class PostTypeManager
                 $postTypeA = [$postTypeA];
             }
             foreach ($this->connections as $name => $connection) {
-                if (in_array($connection->parameters['from'], $postTypeA) && in_array($connection->parameters['to'],
-                        $postTypeB)) {
+                if (
+                    in_array($connection->parameters['from'], $postTypeA) &&
+                    in_array($connection->parameters['to'], $postTypeB)
+                ) {
                     $connectionNames[] = $name;
                 }
-                if (in_array($connection->parameters['from'], $postTypeB) && in_array($connection->parameters['to'],
-                        $postTypeA)) {
+                if (
+                    in_array($connection->parameters['from'], $postTypeB) &&
+                    in_array($connection->parameters['to'], $postTypeA)
+                ) {
                     $connectionNames[] = $name;
                 }
             }
