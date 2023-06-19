@@ -13,27 +13,29 @@ use Traversable;
 class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \Countable
 {
     /**
-     * @param string|array $query
+     * @param string|array|null $query If null, no query is performed
      */
     public function __construct(mixed $query = '')
     {
-        $defaults = [
-            'posts_per_page' => -1,
-            'post_status' => 'publish'
-        ];
-        $query    = wp_parse_args($query, $defaults);
+        if (!is_null($query)) {
+            $defaults = [
+                'posts_per_page' => -1,
+                'post_status' => 'publish'
+            ];
+            $query = wp_parse_args($query, $defaults);
 
-        // If there is no post type, or the post type is singular and isn't valid, replace it with any *except*
-        // 'attachment' which can cause crashes on ?preview=true if a file title matches a render-able post's.
-        $validPostTypes    = get_post_types();
-        $requestedPostType = $query['post_type'] ?? 'any';
-        if (is_scalar($requestedPostType) && !array_key_exists($requestedPostType, $validPostTypes)) {
-            $query['post_type'] = array_values(array_diff($validPostTypes, ['attachment']));
+            // If there is no post type, or the post type is singular and isn't valid, replace it with any *except*
+            // 'attachment' which can cause crashes on ?preview=true if a file title matches a render-able post's.
+            $validPostTypes = PostTypeManager::get()->getPostTypes();
+            $requestedPostType = $query['post_type'] ?? 'any';
+            if (is_scalar($requestedPostType) && !array_key_exists($requestedPostType, $validPostTypes)) {
+                $query['post_type'] = $validPostTypes;
+            }
         }
 
         parent::__construct($query);
 
-        if ($this->query_vars['error']) {
+        if ($this->query_vars['error'] ?? '') {
             die('Query error ' . $this->query_vars['error']);
         }
     }
@@ -42,32 +44,36 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 
     public function getIterator() : Traversable
     {
-        return new \ArrayIterator($this->posts);
+        return new \ArrayIterator($this->posts ?? []);
     }
 
     public function offsetExists(mixed $offset) : bool
     {
-        return isset($this->posts[$offset]);
+        return $this->posts && isset($this->posts[$offset]);
     }
 
     public function offsetGet(mixed $offset) : mixed
     {
-        return $this->posts[$offset];
+        return $this->posts ? $this->posts[$offset] : null;
     }
 
     public function offsetSet(mixed $offset, mixed $value) : void
     {
-        $this->posts[$offset] = $value;
+        if ($this->posts !== null) {
+            $this->posts[$offset] = $value;
+        }
     }
 
     public function offsetUnset(mixed $offset) : void
     {
-        unset($this->posts[$offset]);
+        if ($this->posts !== null) {
+            unset($this->posts[$offset]);
+        }
     }
 
     public function count() : int
     {
-        return count($this->posts);
+        return $this->posts ? count($this->posts) : 0;
     }
 
     /**

@@ -10,7 +10,7 @@ trait HasAcfMetadata
      * @param bool $single
      * @return array|string
      */
-    public function metadata($name, $single = true)
+    public function metadata(string $name, bool $single = true) : mixed
     {
         return $this->getAcf($name, $single);
     }

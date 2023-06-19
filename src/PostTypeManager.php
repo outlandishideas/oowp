@@ -23,7 +23,7 @@ class PostTypeManager
     {
     }
 
-    protected static PostTypeManager $instance;
+    protected static ?PostTypeManager $instance = null;
 
     /**
      * Singleton getter that now allows for subclasses without a copy of the method (via `static::`).
@@ -66,11 +66,8 @@ class PostTypeManager
     }
 
     /**
-     * Registers the given classes as OOWP post types
+     * Registers the given classes as OOWP post types. All classes must subclass WordpressPost
      *
-     * Usage (php < 5.5):
-     * $manager->registerPostTypes(['namespace\of\posttypes\MyPostType', 'namespace\of\posttypes\AnotherPostType'])
-     * Usage (php >= 5.5):
      * $manager->registerPostTypes([MyPostType::class, AnotherPostType::class])
      *
      * @param string[] $classNames
