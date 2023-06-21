@@ -112,7 +112,7 @@ class WordpressTheme
 
     public function htmlTitle()
     {
-        return wp_title('&laquo;', true, 'right') . ' ' . $this->siteTitle();
+        return wp_title('&laquo;', false, 'right') . ' ' . $this->siteTitle();
     }
 
     /**
