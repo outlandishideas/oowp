@@ -2,17 +2,15 @@
 
 namespace Outlandish\Wordpress\Oowp;
 
+use WP_Query;
+
 class QueryVars
 {
     private $args;
 
     function __construct($data)
     {
-        if ($data instanceof \WP_Query) {
-            $this->args = $data->query_vars;
-        } else {
-            $this->args = $data;
-        }
+        $this->args = $data instanceof WP_Query ? $data->query_vars : $data
     }
 
     public function hasArg($arg)
@@ -27,12 +25,9 @@ class QueryVars
 
     public function isForPostType($postType)
     {
-        $postTypes = $this->args['post_type'];
-        if (is_array($postTypes)) {
-            // TODO: Is this correct?
-            return in_array($postType, $postTypes);
-        } else {
-            return $postTypes == 'any' || $postTypes == $postType;
-        }
+        return in_array(
+            $postType,
+            is_array($this->args['post_type']) ? $this->args['post_type'] : ['any', $this->args['post_type']]
+        );
     }
 }
