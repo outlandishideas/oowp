@@ -40,7 +40,7 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 
     /* Interfaces */
 
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return new \ArrayIterator($this->posts);
     }
@@ -50,7 +50,7 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
         return isset($this->posts[$offset]);
     }
 
-    public function offsetGet($offset): bool
+    public function offsetGet($offset): mixed
     {
         return $this->posts[$offset];
     }
