@@ -40,32 +40,32 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 
     /* Interfaces */
 
-    public function getIterator()
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->posts);
     }
 
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return isset($this->posts[$offset]);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->posts[$offset];
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->posts[$offset] = $value;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         unset($this->posts[$offset]);
     }
 
-    public function count()
+    public function count(): int
     {
         return count($this->posts);
     }
