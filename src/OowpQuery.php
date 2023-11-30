@@ -40,7 +40,7 @@ class OowpQuery extends \WP_Query implements \IteratorAggregate, \ArrayAccess, \
 
     /* Interfaces */
 
-    public function getIterator(): Traversable
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->posts);
     }
