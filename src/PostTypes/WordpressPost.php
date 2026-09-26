@@ -999,7 +999,7 @@ abstract class WordpressPost
      * Gets either this class's post type, or all registered post types, depending on where this was called from
      * @return string[]|string
      */
-    private static function getSelfPostTypeConstraint(): array|string
+    protected static function getSelfPostTypeConstraint(): array|string
     {
         $postTypeManager = PostTypeManager::get();
 
