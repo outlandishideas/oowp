@@ -5,13 +5,13 @@
 - Version: 4.0
 - Requires at least: 6.2
 - Tested up to: 6.2
-- License: GPLv2 or later
-- License URI: http://www.gnu.org/licenses/gpl-2.0.html
+- License: GPL-3.0-or-later
+- License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 ## Overview
 OOWP is a tool for WordPress theme developers that makes templating in WordPress more sensible. It replaces
 [The Loop](https://codex.wordpress.org/The_Loop) and contextless functions such as `the_title()` with object-oriented
-methods such as `$event->title()`, `$event->parent()` and `$event->getConnected('people')`.
+methods such as `$event->title()`, `$event->parent()` and `$event->connected('people')`.
 
 OOWP is designed to be used with themes with [custom post types](https://codex.wordpress.org/Post_Types) such as
 Events, People, Places, Articles, Recipes, etc. It doesn't currently work with the default post types
@@ -27,8 +27,8 @@ to behind the scenes you can write nice object-oriented code like this:
 
 ```php
 foreach ( Place::fetchAll() as $place ) {
-    echo "<h2>Articles about {$place->title()}<h2>";
-    foreach ( $place->getConnected(Article::postType()) as $article {
+    echo "<h2>Articles about {$place->title()}</h2>";
+    foreach ( $place->connected(Article::postType()) as $article ) {
         echo '<h3>' . $article->htmlLink() . '</h3>';
         echo $article->excerpt();
     }
@@ -73,12 +73,12 @@ We structure our theme folders like this:
                     ├── public      # Where assets from ../assets get built to by compiler scripts
                     ├── src         # The main theme files
                         ├── PostTypes           # For 'model' classes that represent custom post types. We often have five or more custom post types
-                            ├── BasePost.php    # An abstract base post that contains functionality common to all the post types in this project (we often have more complex class hierarchies for, for example, hierarhical and non-hierarchical post-tyeps)
+                            ├── BasePost.php    # An abstract base post that contains functionality common to all the post types in this project (we often have more complex class hierarchies for, for example, hierarchical and non-hierarchical post-types)
                             ├── Blog.php        # A class representing the 'blog' custom post type
                             ├── Author.php      # A class representing the 'author' custom post type
                             ├── ...
                         ├── Router              # → For 'controllers' that route URLs to responses via the relevant models and views
-                            ├── Router.php      # → The file which contains the mapping of routes (URL patterns) to controller functions that will generate and return a reponse
+                            ├── Router.php      # → The file which contains the mapping of routes (URL patterns) to controller functions that will generate and return a response
                         ├── Views               # → For 'view' classes that subclass the OowpView or RoutemasterOowpView class
                             ├── Components      # → For smaller templates that make up larger views
                             ├── Layout.php      # → An outer 'layout' file that usually contains the header and footer and which is wrapped around the other views
@@ -133,11 +133,11 @@ To register a connection between two post types use the static `registerConnecti
 post type and any connection options (see p2p_register_connection_type from Post2Post):
 
 ```php
-ClassA::registerConnection(ClassB::postTYpe(), ['cardinality' => 'many-to-many']);
+ClassA::registerConnection(ClassB::postType(), ['cardinality' => 'many-to-many']);
 ```
 
 Once you have registered this connection you can then easily fetch connected posts in your page templates using the
-`WordpressPost->getConnected()` method (see example above).
+`WordpressPost->connected()` method (see example above).
 
 ## WordPress.org
 

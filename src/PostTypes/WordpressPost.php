@@ -662,8 +662,8 @@ abstract class WordpressPost
         if (empty($x)) {
             return false;
         }
-        $parent = $this->parent();
-        return $parent && $parent->ID === $x->ID;
+        $parent = $x->parent();
+        return $parent && $parent->ID === $this->ID;
     }
 
     /**
