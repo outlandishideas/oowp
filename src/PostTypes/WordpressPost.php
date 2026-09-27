@@ -649,8 +649,8 @@ abstract class WordpressPost
      */
     public function isCurrentPage() : bool
     {
-        $x = WordpressPost::getQueriedObject();
-        return (isset($x) && $x->ID === $this->ID);
+        $currentPage = WordpressPost::getQueriedObject();
+        return (isset($currentPage) && $currentPage->ID === $this->ID);
     }
 
     /**
@@ -658,12 +658,12 @@ abstract class WordpressPost
      */
     public function isCurrentPageParent() : bool
     {
-        $x = WordpressPost::getQueriedObject();
-        if (empty($x)) {
+        $currentPage = WordpressPost::getQueriedObject();
+        if (empty($currentPage)) {
             return false;
         }
-        $parent = $this->parent();
-        return $parent && $parent->ID === $x->ID;
+        $currentPageParent = $currentPage->parent();
+        return $currentPageParent && $currentPageParent->ID === $this->ID;
     }
 
     /**
@@ -671,12 +671,12 @@ abstract class WordpressPost
      */
     public function isCurrentPageAncestor() : bool
     {
-        $x = WordpressPost::getQueriedObject();
-        while (isset($x) && $x) {
-            if ($x->ID === $this->ID) {
+        $currentPage = WordpressPost::getQueriedObject();
+        while (isset($currentPage) && $currentPage) {
+            if ($currentPage->ID === $this->ID) {
                 return true;
             }
-            $x = $x->parent();
+            $currentPage = $currentPage->parent();
         }
         return false;
     }

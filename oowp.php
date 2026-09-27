@@ -2,7 +2,7 @@
 /*
 Plugin Name: Object-oriented WordPress (OOWP)
 Plugin URI: https://github.com/outlandishideas/oowp
-Description: OOWP is a tool for WordPress theme developers that makes templating in WordPress more sensible. It replaces [The Loop](https://codex.wordpress.org/The_Loop) and contextless functions such as the_title() with object-oriented methods such as $event->title(), $event->parent() and $event->getConnected('people').
+Description: OOWP is a tool for WordPress theme developers that makes templating in WordPress more sensible. It replaces [The Loop](https://codex.wordpress.org/The_Loop) and contextless functions such as the_title() with object-oriented methods such as $event->title(), $event->parent() and $event->connected('people').
 Version: 4.0.0
 */
 
